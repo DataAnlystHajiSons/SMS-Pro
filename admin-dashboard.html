@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Admin Dashboard - HS Priat Software</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="auth-guard.js" defer></script>
+    
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Make sidebar scrollable */
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            white-space: nowrap; /* Prevent text wrapping */
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            flex-grow: 1; /* Allow main content to take remaining space */
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .kpi-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease-in-out;
+            border: 1px solid #e0e0e0;
+            cursor: pointer;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        /* --- Button Overrides --- */
+        .btn-primary,
+        .btn-primary:focus {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085; /* Darker Teal */
+            border-color: #16a085;
+        }
+
+        #logout-btn,
+        #logout-btn:focus {
+            background-color: #e74c3c;
+            border-color: #e74c3c;
+            box-shadow: none;
+        }
+
+        #logout-btn:hover {
+            background-color: #c0392b;
+            border-color: #c0392b;
+        }
+
+        .btn-info,
+        .btn-info:focus {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .btn-info:hover {
+            background-color: #7f8c8d; /* Darker Silver */
+            border-color: #7f8c8d;
+            color: #fff;
+        }
+
+        #chart-prev-btn,
+        #chart-next-btn {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        #chart-prev-btn:hover,
+        #chart-next-btn:hover {
+            background-color: #16a085; /* Darker Teal */
+            border-color: #16a085;
+        }
+
+        .kpi-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .kpi-value-money {
+            display: flex;
+            justify-content: space-between; /* Pushes items to opposite ends */
+            align-items: baseline;
+        }
+
+        .kpi-currency {
+            font-size: 0.8em; /* Smaller size relative to parent */
+            font-weight: 400; /* Not bold */
+            margin-right: 5px; /* Small space between Rs and value */
+        }
+
+        .kpi-distribution {
+            font-size: 0.85rem;
+            color: #555;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+            margin-top: 15px;
+        }
+
+        .kpi-distribution div {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .comparison-table {
+            margin-top: 20px;
+        }
+
+        
+
+        
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-digging {
+            animation: crane-sway 2s ease-in-out infinite alternate; /* Slower, smoother sway */
+        }
+
+        @keyframes crane-sway {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(2deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-2deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Site Stages Timeline */
+        #site-stages-timeline-container {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            overflow-x: auto;
+            padding: 20px 0;
+        }
+
+        .stage-column {
+            flex: 1;
+            padding: 0 15px;
+            min-width: 220px;
+        }
+
+        .stage-box {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-top: 4px solid var(--secondary-color);
+            transition: all 0.3s ease;
+        }
+
+        .stage-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+
+        .stage-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stage-header i {
+            font-size: 1.5rem;
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
+        .stage-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .stage-sites {
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .site-card {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .site-card:hover {
+            background-color: #e9ecef;
+        }
+
+        /* Stage-specific colors */
+        .stage-box[data-stage="BOQ"] { border-top-color: #3498db; } /* Blue */
+        .stage-box[data-stage="Material Delivery"] { border-top-color: #f1c40f; } /* Yellow */
+        .stage-box[data-stage="Annexture 4.2 (e)"] { border-top-color: #e67e22; } /* Orange */
+        .stage-box[data-stage="Consultant Verification"] { border-top-color: #9b59b6; } /* Purple */
+        .stage-box[data-stage="ICR-1 Invoice"] { border-top-color: #2ecc71; } /* Green */
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            #site-stages-timeline-container {
+                flex-direction: column;
+            }
+            .stage-column {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Modal styles */
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        #kpiDetailModalBody table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #kpiDetailModalBody th, #kpiDetailModalBody td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #kpiDetailModalBody th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+
+        .drillable-row {
+            cursor: pointer;
+        }
+
+        .drillable-row:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    
+
+    <div class="sidebar" id="main-sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html" class="active"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+            <a href="survey-form-new.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <div>
+                <span>Welcome! <span id="admin-name">Admin</span></span>
+                <button id="logout-btn" class="btn btn-danger ms-3"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </div>
+
+                <div class="kpi-cards">
+            <div class="kpi-card" data-kpi="total_sites">
+                <div class="kpi-title">Total Sites</div>
+                <div class="kpi-value" id="kpi-total-sites">0</div>
+            </div>
+            <div class="kpi-card" id="kpi-completed-sites-card" data-bs-toggle="tooltip" data-bs-placement="top" title="" data-kpi="completed_sites">
+                <div class="kpi-title">Completed Sites</div>
+                <div class="kpi-value" id="kpi-completed-sites">0</div>
+            </div>
+            <div class="kpi-card" data-kpi="ongoing_sites">
+                <div class="kpi-title">Ongoing Sites</div>
+                <div class="kpi-value" id="kpi-ongoing-sites">0</div>
+            </div>
+            <div class="kpi-card" data-kpi="boq">
+                <div class="kpi-title">Total BOQ Amount</div>
+                <div class="kpi-value kpi-value-money" id="kpi-total-boq">Rs0M</div>
+                <div class="kpi-distribution" id="kpi-boq-distribution">
+                    <div><span>Material:</span> <span>Rs0M</span></div>
+                    <div><span>Service:</span> <span>Rs0M</span></div>
+                </div>
+            </div>
+            <div class="kpi-card" data-kpi="budget">
+                <div class="kpi-title">Total Budget Amount</div>
+                <div class="kpi-value kpi-value-money" id="kpi-total-budget-amount">Rs0M</div>
+                 <div class="kpi-distribution" id="kpi-budget-distribution">
+                    <div><span>Material:</span> <span>Rs0M</span></div>
+                    <div><span>Service:</span> <span>Rs0M</span></div>
+                </div>
+            </div>
+            <div class="kpi-card" data-kpi="expense">
+                <div class="kpi-title">Total Expense Amount</div>
+                <div class="kpi-value kpi-value-money" id="kpi-total-expense-amount">Rs0M</div>
+                 <div class="kpi-distribution" id="kpi-expense-distribution">
+                    <div><span>Material:</span> <span>Rs0M</span></div>
+                    <div><span>Expense:</span> <span>Rs0M</span></div>
+                </div>
+            </div>
+            <div class="kpi-card" data-kpi="profit">
+                <div class="kpi-title">Total Profit Amount</div>
+                <div class="kpi-value kpi-value-money" id="kpi-total-profit-amount">Rs0M</div>
+                <div class="kpi-distribution" id="kpi-profit-distribution">
+                    <div><span>Material:</span> <span>Rs0M</span></div>
+                    <div><span>Service:</span> <span>Rs0M</span></div>
+                </div>
+            </div>
+            <div class="kpi-card" data-kpi="payment">
+                <div class="kpi-title">Total Payment Amount</div>
+                <div class="kpi-value kpi-value-money" id="kpi-total-payment-amount">Rs0M</div>
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <h2>Site Stages</h2>
+            <div id="site-stages-timeline-container">
+                <!-- Timeline will be generated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-5">
+            <h2>Site-wise Comparison</h2>
+            <a href="site-progress.html" class="btn btn-primary"><i class="fa-solid fa-chart-simple"></i> Site Progress</a>
+        </div>
+        <div class="chart-container" style="position: relative; height:60vh">
+            <canvas id="site-comparison-chart"></canvas>
+        </div>
+        <div class="pagination-controls mt-3 text-center">
+            <button id="chart-prev-btn" class="btn btn-primary"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+            <span id="chart-page-info" class="mx-3"></span>
+            <button id="chart-next-btn" class="btn btn-primary">Next <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- KPI Details Modal -->
+    <div class="modal fade" id="kpiDetailModal" tabindex="-1" aria-labelledby="kpiDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="kpiDetailModalLabel">KPI Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="kpiDetailModalBody">
+                    <!-- Content will be injected here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+            function animateValue(obj, start, end, duration, formatter = value => value) {
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const currentValue = start + progress * (end - start);
+                    obj.innerHTML = formatter(currentValue);
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+
+            const formatNumberToMillions = (amount) => (amount / 1000000).toFixed(2);
+            const formatToMillionsWithCurrency = (amount) => `<span class="kpi-currency">Rs</span><span class="kpi-main-value">${formatNumberToMillions(amount)}M</span>`;
+
+            const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        async function loadKPIs() {
+            const { data: sites, error } = await supabase.from('site_details').select('*');
+            if (error) return;
+
+            document.getElementById('kpi-total-sites').textContent = sites.length;
+            const completedSites = sites.filter(s => s.site_status && s.site_status.toLowerCase() === 'completed');
+            document.getElementById('kpi-completed-sites').textContent = completedSites.length;
+            const completedSiteNames = completedSites.map(s => `<li>${s.site_name}</li>`).join('');
+            document.getElementById('kpi-completed-sites-card').setAttribute('title', `<ul>${completedSiteNames}</ul>`);
+            document.getElementById('kpi-ongoing-sites').textContent = sites.filter(s => s.site_status && s.site_status.toLowerCase() === 'ongoing').length;
+
+                        const formatToMillions = (amount) => `<span class="kpi-currency">Rs</span><span class="kpi-main-value">${(amount / 1000000).toFixed(2)}M</span>`;
+
+            let totalBoqAmount = 0;
+            let totalExpenseAmount = 0;
+            let boqMaterialTotal = 0;
+            let boqServiceTotal = 0;
+            let expenseMaterialTotal = 0;
+            let expenseServiceTotal = 0;
+
+            // --- BOQ KPI ---
+            const { data: boqRows, error: boqError } = await supabase.from('boq_details').select('total, item_type');
+            if (!boqError && boqRows) {
+                let material = 0, service = 0;
+                boqRows.forEach(r => {
+                    const amount = parseFloat(r.total) || 0;
+                    totalBoqAmount += amount;
+                    if (r.item_type === 'Material') boqMaterialTotal += amount;
+                    else if (r.item_type === 'Service Charges') boqServiceTotal += amount;
+                });
+                animateValue(document.getElementById('kpi-total-boq'), 0, totalBoqAmount, 1500, formatToMillionsWithCurrency);
+                document.getElementById('kpi-boq-distribution').innerHTML = 
+                    `<div><span>Material:</span> <span>${formatToMillions(boqMaterialTotal)}</span></div>
+                    <div><span>Service:</span> <span>${formatToMillions(boqServiceTotal)}</span></div>`
+            }
+
+            let totalBudgetAmountFromBudgetDetails = 0;
+            let budgetMaterialTotalFromBudgetDetails = 0;
+            let budgetServiceTotalFromBudgetDetails = 0;
+
+            // --- Budget KPI ---
+            const { data: budgetRows, error: budgetError } = await supabase.from('budget_details').select('total, item_type');
+            if (!budgetError && budgetRows) {
+                budgetRows.forEach(r => {
+                    const amount = parseFloat(r.total) || 0;
+                    totalBudgetAmountFromBudgetDetails += amount;
+                    if (r.item_type === 'Material') budgetMaterialTotalFromBudgetDetails += amount;
+                    else if (r.item_type === 'Service Charges') budgetServiceTotalFromBudgetDetails += amount;
+                });
+                animateValue(document.getElementById('kpi-total-budget-amount'), 0, totalBudgetAmountFromBudgetDetails, 1500, formatToMillionsWithCurrency);
+                document.getElementById('kpi-budget-distribution').innerHTML = 
+                    `<div><span>Material:</span> <span>${formatToMillions(budgetMaterialTotalFromBudgetDetails)}</span></div>
+                    <div><span>Service:</span> <span>${formatToMillions(budgetServiceTotalFromBudgetDetails)}</span></div>`
+            }
+
+            // --- Expense KPI (Fixed Column Names and Error Handling) ---
+            try {
+                const { data: actualDetailsRows, error: actualDetailsError } = await supabase.from('actual_details').select('*');
+                const { data: expenseEntriesRows, error: expenseError } = await supabase.from('expense_entries').select('*');
+
+                console.log('actual_details columns:', actualDetailsRows?.length > 0 ? Object.keys(actualDetailsRows[0]) : 'No data');
+                console.log('expense_entries columns:', expenseEntriesRows?.length > 0 ? Object.keys(expenseEntriesRows[0]) : 'No data');
+
+                if (!actualDetailsError && !expenseError) {
+                    let materialTotal = 0;
+                    (actualDetailsRows || []).forEach(r => {
+                        materialTotal += parseFloat(r.total || r.amount || 0);
+                    });
+                    expenseMaterialTotal = materialTotal;
+                    
+                    let serviceTotal = 0;
+                    (expenseEntriesRows || []).forEach(r => {
+                        serviceTotal += parseFloat(r.amount || r.total || 0);
+                    });
+                    expenseServiceTotal = serviceTotal;
+                    
+                    const totalExpense = materialTotal + serviceTotal;
+                    totalExpenseAmount = totalExpense;
+                    
+                    animateValue(document.getElementById('kpi-total-expense-amount'), 0, totalExpense, 1500, formatToMillionsWithCurrency);
+                    document.getElementById('kpi-expense-distribution').innerHTML = 
+                        `<div><span>Material:</span> <span>${formatToMillions(materialTotal)}</span></div>
+                        <div><span>Service:</span> <span>${formatToMillions(serviceTotal)}</span></div>`
+                } else {
+                    console.error('Errors:', actualDetailsError, expenseError);
+                }
+            } catch (error) {
+                console.error('Exception:', error);
+            }
+
+            // --- Profit KPI ---
+            const totalProfit = totalBudgetAmountFromBudgetDetails - totalExpenseAmount;
+            const profitMaterial = budgetMaterialTotalFromBudgetDetails - expenseMaterialTotal;
+            const profitService = budgetServiceTotalFromBudgetDetails - expenseServiceTotal;
+            animateValue(document.getElementById('kpi-total-profit-amount'), 0, totalProfit, 1500, formatToMillionsWithCurrency);
+            document.getElementById('kpi-profit-distribution').innerHTML = 
+                `<div><span>Material:</span> <span>${formatToMillions(profitMaterial)}</span></div>
+                <div><span>Service:</span> <span>${formatToMillions(profitService)}</span></div>`;
+
+            // --- Total Payment Amount KPI ---
+            const { data: paymentRows, error: paymentError } = await supabase.from('payment_details').select('amount');
+            if (!paymentError && paymentRows) {
+                let totalPayment = 0;
+                paymentRows.forEach(r => {
+                    totalPayment += parseFloat(r.amount || 0);
+                });
+                animateValue(document.getElementById('kpi-total-payment-amount'), 0, totalPayment, 1500, formatToMillionsWithCurrency);
+            }
+        }
+
+        let siteComparisonChart = null;
+        let siteComparisonData = [];
+        let currentPage = 0;
+        const sitesPerPage = 5;
+
+        function renderSiteComparisonChart() {
+            const start = currentPage * sitesPerPage;
+            const end = start + sitesPerPage;
+            const paginatedData = siteComparisonData.slice(start, end);
+
+            const siteLabels = paginatedData.map(s => s.site_name);
+            const boqData = paginatedData.map(s => s.boq);
+            const budgetData = paginatedData.map(s => s.budget);
+            const expenseData = paginatedData.map(s => s.expense);
+
+            if (siteComparisonChart) {
+                siteComparisonChart.destroy();
+            }
+
+            const ctx = document.getElementById('site-comparison-chart').getContext('2d');
+            siteComparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: siteLabels,
+                    datasets: [
+                        {
+                            label: 'BOQ Amount',
+                            data: boqData,
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return;
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(26, 188, 156, 1)'); // Darker teal
+                                gradient.addColorStop(1, 'rgba(26, 188, 156, 0.8)'); // Lighter teal
+                                return gradient;
+                            },
+                            borderColor: 'rgba(26, 188, 156, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Budget Amount',
+                            data: budgetData,
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return;
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(52, 152, 219, 1)'); // Darker blue
+                                gradient.addColorStop(1, 'rgba(52, 152, 219, 0.8)'); // Lighter blue
+                                return gradient;
+                            },
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Expense Amount',
+                            data: expenseData,
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) return;
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(231, 76, 60, 1)'); // Darker red
+                                gradient.addColorStop(1, 'rgba(231, 76, 60, 0.8)'); // Lighter red
+                                return gradient;
+                            },
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 20 // Add padding to the top to prevent labels from being cut off
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rs' + (value / 1000000).toFixed(1) + 'M';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(200, 200, 200, 0.2)', // Very light gray
+                                drawBorder: false // Do not draw the axis line
+                            }
+                        },
+                        x: { // Add x-axis grid styling
+                            grid: {
+                                color: 'rgba(200, 200, 200, 0.2)', // Very light gray
+                                drawBorder: false // Do not draw the axis line
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)', // Darker background
+                            titleColor: '#fff', // White title
+                            bodyColor: '#eee', // Light gray body text
+                            padding: 12, // More padding
+                            cornerRadius: 6, // Rounded corners
+                            displayColors: false, // Hide color boxes in tooltip
+                            callbacks: {
+                                footer: function(tooltipItems) {
+                                    let material = 0;
+                                    let service = 0;
+                                    tooltipItems.forEach(function(tooltipItem) {
+                                        const dataIndex = tooltipItem.dataIndex;
+                                        const siteData = siteComparisonData[currentPage * sitesPerPage + dataIndex];
+                                        if (tooltipItem.dataset.label === 'Expense Amount') {
+                                            material = siteData.material;
+                                            service = siteData.service;
+                                        } else if (tooltipItem.dataset.label === 'BOQ Amount') {
+                                            material = siteData.boqMaterial;
+                                            service = siteData.boqService;
+                                        } else if (tooltipItem.dataset.label === 'Budget Amount') {
+                                            material = siteData.budgetMaterial;
+                                            service = siteData.budgetService;
+                                        }
+                                    });
+                                    return `Material: Rs${formatNumberToMillions(material)}M
+Service: Rs${formatNumberToMillions(service)}M`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('chart-page-info').textContent = `Page ${currentPage + 1} of ${Math.ceil(siteComparisonData.length / sitesPerPage)}`;
+            document.getElementById('chart-prev-btn').disabled = currentPage === 0;
+            document.getElementById('chart-next-btn').disabled = end >= siteComparisonData.length;
+        }
+
+        async function loadSiteComparison() {
+            try {
+                const { data: sites, error } = await supabase.from('site_details').select('id, site_name, site_status');
+                if (error || !sites) {
+                    console.error('Error fetching sites:', error);
+                    return;
+                }
+
+                const { data: boqRows } = await supabase.from('boq_details').select('site_id, total, item_type');
+                const { data: budgetRows } = await supabase.from('budget_details').select('site_id, total, item_type');
+                const { data: actualDetailsRows } = await supabase.from('actual_details').select('*');
+                const { data: expenseEntriesRows } = await supabase.from('expense_entries').select('*');
+
+                // Calculate BOQ totals by site
+                const boqMap = {};
+                const boqMaterialMap = {};
+                const boqServiceMap = {};
+                (boqRows || []).forEach(row => {
+                    if (!boqMap[row.site_id]) boqMap[row.site_id] = 0;
+                    boqMap[row.site_id] += parseFloat(row.total || 0);
+                    if (row.item_type === 'Material') {
+                        if (!boqMaterialMap[row.site_id]) boqMaterialMap[row.site_id] = 0;
+                        boqMaterialMap[row.site_id] += parseFloat(row.total || 0);
+                    } else if (row.item_type === 'Service Charges') {
+                        if (!boqServiceMap[row.site_id]) boqServiceMap[row.site_id] = 0;
+                        boqServiceMap[row.site_id] += parseFloat(row.total || 0);
+                    }
+                });
+
+                // Calculate Budget totals by site
+                const budgetMap = {};
+                const budgetMaterialMap = {};
+                const budgetServiceMap = {};
+                (budgetRows || []).forEach(row => {
+                    if (!budgetMap[row.site_id]) budgetMap[row.site_id] = 0;
+                    budgetMap[row.site_id] += parseFloat(row.total || 0);
+                    if (row.item_type === 'Material') {
+                        if (!budgetMaterialMap[row.site_id]) budgetMaterialMap[row.site_id] = 0;
+                        budgetMaterialMap[row.site_id] += parseFloat(row.total || 0);
+                    } else if (row.item_type === 'Service Charges') {
+                        if (!budgetServiceMap[row.site_id]) budgetServiceMap[row.site_id] = 0;
+                        budgetServiceMap[row.site_id] += parseFloat(row.total || 0);
+                    }
+                });
+
+                console.log('Actual Details Rows:', actualDetailsRows);
+                console.log('Expense Entries Rows:', expenseEntriesRows);
+                console.log('Sites:', sites);
+                
+                // Calculate Material totals by site_id (using foreign key)
+                const materialMap = {};
+                (actualDetailsRows || []).forEach(row => {
+                    const siteId = row.site_id;
+                    if (!materialMap[siteId]) materialMap[siteId] = 0;
+                    materialMap[siteId] += parseFloat(row.total || 0);
+                });
+
+                // Calculate Service totals by site name (matching expense_entries.site with site_details.site_name)
+                const serviceMap = {};
+                (expenseEntriesRows || []).forEach(row => {
+                    const siteName = String(row.site || '').trim(); // Use site column from expense_entries
+                    if (!serviceMap[siteName]) serviceMap[siteName] = 0;
+                    serviceMap[siteName] += parseFloat(row.amount || 0);
+                });
+
+                siteComparisonData = sites.map(s => {
+                    const material = materialMap[s.id] || 0; // Material uses site_id
+                    const service = serviceMap[s.site_name] || 0; // Service uses site_name matching
+                    
+                    console.log(`Site ${s.site_name}: Material=${material}, Service=${service}`);
+                    return {
+                        site_name: s.site_name,
+                        boq: boqMap[s.id] || 0,
+                        budget: budgetMap[s.id] || 0,
+                        expense: material + service,
+                        material: material,
+                        service: service,
+                        boqMaterial: boqMaterialMap[s.id] || 0,
+                        boqService: boqServiceMap[s.id] || 0,
+                        budgetMaterial: budgetMaterialMap[s.id] || 0,
+                        budgetService: budgetServiceMap[s.id] || 0,
+                        site_status: s.site_status // Include site_status
+                    };
+                });
+
+                // Sort siteComparisonData: completed sites first
+                siteComparisonData.sort((a, b) => {
+                    if (a.site_status && a.site_status.toLowerCase() === 'completed' && (!b.site_status || b.site_status.toLowerCase() !== 'completed')) {
+                        return -1; // a comes before b
+                    }
+                    if ((!a.site_status || a.site_status.toLowerCase() !== 'completed') && b.site_status && b.site_status.toLowerCase() === 'completed') {
+                        return 1; // b comes before a
+                    }
+                    return 0; // maintain original order for same status or if status is not completed
+                });
+
+                currentPage = 0; // Set to page 1 (index 0) by default
+                renderSiteComparisonChart();
+            } catch (error) {
+                console.error('Exception in loadSiteComparison:', error);
+            }
+        }
+
+        async function loadSiteStages() {
+            const STAGES = [
+                { name: "Initiated", icon: "fa-solid fa-flag" },
+                { name: "BOQ", icon: "fa-solid fa-list-check" },
+                { name: "Material Delivery", icon: "fa-solid fa-truck" },
+                { name: "Annexture 4.2 (e)", icon: "fa-solid fa-file-pen" },
+                { name: "Consultant Verification", icon: "fa-solid fa-user-check" },
+                { name: "ICR-1 Invoice", icon: "fa-solid fa-file-invoice-dollar" }
+            ];
+
+            const { data: sites } = await supabase.from('site_details').select('id, site_name');
+            if (!sites) return;
+
+            const [
+                { data: boqDetails },
+                { data: actualDetails },
+                { data: documentation }
+            ] = await Promise.all([
+                supabase.from('boq_details').select('site_id'),
+                supabase.from('actual_details').select('site_id, status'),
+                supabase.from('documentation').select('site_id, annexture_4_2_e, icr_1_url')
+            ]);
+
+            const sitesWithStages = sites.map(site => {
+                let stage = "Initiated";
+
+                const hasBoq = boqDetails.some(b => b.site_id === site.id);
+                if (hasBoq) stage = "BOQ";
+
+                const hasActuals = actualDetails.some(a => a.site_id === site.id);
+                if (hasActuals) stage = "Material Delivery";
+
+                const siteActuals = actualDetails.filter(a => a.site_id === site.id);
+                if (siteActuals.length > 0) {
+                    const deliveredCount = siteActuals.filter(a => a.status === 'Delivered').length;
+                    const deliveryPercentage = (deliveredCount / siteActuals.length) * 100;
+                    if (deliveryPercentage >= 80) {
+                        stage = "Annexture 4.2 (e)";
+                    }
+                }
+
+                const siteDoc = documentation.find(d => d.site_id === site.id);
+                if (siteDoc && siteDoc.annexture_4_2_e) {
+                    stage = "Consultant Verification";
+                }
+                if (siteDoc && siteDoc.icr_1_url) {
+                    stage = "ICR-1 Invoice";
+                }
+
+                return { site_name: site.site_name, stage };
+            });
+
+            const sitesByStage = {};
+            STAGES.forEach(s => sitesByStage[s.name] = []);
+            sitesWithStages.forEach(s => {
+                if (sitesByStage[s.stage]) {
+                    sitesByStage[s.stage].push(s);
+                }
+            });
+
+            const container = document.getElementById('site-stages-timeline-container');
+            container.innerHTML = STAGES.map(stageInfo => `
+                <div class="stage-column">
+                    <div class="stage-box" data-stage="${stageInfo.name}">
+                        <div class="stage-header">
+                            <i class="${stageInfo.icon}"></i>
+                            <h5>${stageInfo.name} (${sitesByStage[stageInfo.name].length})</h5>
+                        </div>
+                        <div class="stage-sites">
+                            ${sitesByStage[stageInfo.name].map(site => `
+                                <div class="site-card" title="${site.site_name}">
+                                    ${site.site_name}
+                                </div>
+                            `).join('') || '<p class="text-muted small">No sites in this stage.</p>'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadAdminName() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const name = user.user_metadata?.display_name || user.user_metadata?.full_name || user.email || 'Admin';
+                document.getElementById('admin-name').textContent = name;
+            } else {
+                 document.getElementById('admin-name').textContent = 'Admin';
+            }
+        }
+
+        let kpiDetailModal;
+        document.addEventListener('DOMContentLoaded', () => {
+            kpiDetailModal = new bootstrap.Modal(document.getElementById('kpiDetailModal'));
+
+            async function loadAllData() {
+                try {
+                    await loadKPIs();
+                    await loadSiteComparison();
+                    await loadAdminName();
+                    await loadSiteStages();
+
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                        return new bootstrap.Tooltip(tooltipTriggerEl, { html: true })
+                    })
+                } catch (error) { 
+                    console.error("Error loading dashboard data:", error);
+                }
+            }
+
+            loadAllData();
+
+            document.addEventListener('click', (event) => {
+                const kpiCard = event.target.closest('.kpi-card');
+                if (kpiCard) {
+                    const kpi = kpiCard.getAttribute('data-kpi');
+                    if (kpi) {
+                       showKpiDetails(kpi);
+                    }
+                }
+            });
+
+            document.getElementById('chart-prev-btn').addEventListener('click', () => {
+                if (currentPage > 0) {
+                    currentPage--;
+                    renderSiteComparisonChart();
+                }
+            });
+
+            document.getElementById('chart-next-btn').addEventListener('click', () => {
+                if ((currentPage + 1) * sitesPerPage < siteComparisonData.length) {
+                    currentPage++;
+                    renderSiteComparisonChart();
+                }
+            });
+
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await supabase.auth.signOut();
+                window.location.href = "login.html";
+            });
+        });
+
+        async function showKpiDetails(kpi, siteName = null) {
+            const modalTitle = document.getElementById('kpiDetailModalLabel');
+            const modalBody = document.getElementById('kpiDetailModalBody');
+            modalBody.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin fa-3x"></i><p>Loading...</p></div>';
+            if (!kpiDetailModal._isShown) {
+                kpiDetailModal.show();
+            }
+
+            let title = '';
+            let tableHtml = '';
+
+            const { data: sites, error: sitesError } = await supabase.from('site_details').select('id, site_name, site_status');
+            if (sitesError) {
+                modalBody.innerHTML = '<p class="text-danger">Error loading sites.</p>';
+                return;
+            }
+
+            const siteMap = sites.reduce((acc, site) => {
+                acc[site.id] = site.site_name;
+                return acc;
+            }, {});
+             const siteNameToIdMap = sites.reduce((acc, site) => {
+                acc[site.site_name] = site.id;
+                return acc;
+            }, {});
+
+            if (siteName) {
+                const siteId = siteNameToIdMap[siteName];
+                title = `Details for ${siteName}`;
+                 let backButton = `<button class="btn btn-secondary mb-3" onclick="showKpiDetails('${kpi}')"><i class="fas fa-arrow-left"></i> Back to Summary</button>`;
+                
+                let detailsHtml = '';
+                switch (kpi) {
+                    case 'boq':
+                        const { data: boqRows, error: boqError } = await supabase.from('boq_details').select('*').eq('site_id', siteId);
+                        if (boqError) { detailsHtml = '<p class="text-danger">Error loading BOQ details.</p>'; break; }
+                        detailsHtml = '<table class="table table-striped"><thead><tr><th>Item</th><th>Type</th><th>Total</th></tr></thead><tbody>';
+                        boqRows.forEach(row => {
+                            detailsHtml += `<tr><td>${row.item_description}</td><td>${row.item_type}</td><td>${row.total.toLocaleString()}</td></tr>`;
+                        });
+                        detailsHtml += '</tbody></table>';
+                        break;
+                    case 'budget':
+                        const { data: budgetRows, error: budgetError } = await supabase.from('budget_details').select('*').eq('site_id', siteId);
+                        if (budgetError) { detailsHtml = '<p class="text-danger">Error loading budget details.</p>'; break; }
+                        detailsHtml = '<table class="table table-striped"><thead><tr><th>Item</th><th>Type</th><th>Total</th></tr></thead><tbody>';
+                        budgetRows.forEach(row => {
+                            detailsHtml += `<tr><td>${row.item_description}</td><td>${row.item_type}</td><td>${row.total.toLocaleString()}</td></tr>`;
+                        });
+                        detailsHtml += '</tbody></table>';
+                        break;
+                    case 'expense':
+                        const { data: actualRows, error: actualError } = await supabase.from('actual_details').select('*').eq('site_id', siteId);
+                        const { data: expenseRows, error: expenseError } = await supabase.from('expense_entries').select('*').eq('site', siteName);
+                        if (actualError || expenseError) { detailsHtml = '<p class="text-danger">Error loading expense details.</p>'; break; }
+                        detailsHtml = '<h5>Material</h5><table class="table table-striped"><thead><tr><th>Item</th><th>Total</th></tr></thead><tbody>';
+                        actualRows.forEach(row => {
+                            detailsHtml += `<tr><td>${row.item_description}</td><td>${row.total.toLocaleString()}</td></tr>`;
+                        });
+                        detailsHtml += '</tbody></table><h5>Service</h5><table class="table table-striped"><thead><tr><th>Description</th><th>Amount</th></tr></thead><tbody>';
+                        expenseRows.forEach(row => {
+                            detailsHtml += `<tr><td>${row.description}</td><td>${row.amount.toLocaleString()}</td></tr>`;
+                        });
+                        detailsHtml += '</tbody></table>';
+                        break;
+                     case 'profit':
+                        title = `Profit Details for ${siteName}`;
+                        const { data: budgetProfitRows, error: budgetProfitError } = await supabase.from('budget_details').select('total').eq('site_id', siteId);
+                        const { data: actualProfitRows, error: actualProfitError } = await supabase.from('actual_details').select('total').eq('site_id', siteId);
+                        const { data: expenseProfitRows, error: expenseProfitError } = await supabase.from('expense_entries').select('amount').eq('site', siteName);
+
+                        if (budgetProfitError || actualProfitError || expenseProfitError) {
+                            detailsHtml = '<p class="text-danger">Error loading profit data.</p>';
+                            break;
+                        }
+
+                        const totalBudget = budgetProfitRows.reduce((sum, row) => sum + row.total, 0);
+                        const totalActuals = actualProfitRows.reduce((sum, row) => sum + row.total, 0);
+                        const totalExpenses = expenseProfitRows.reduce((sum, row) => sum + row.amount, 0);
+                        const totalExpense = totalActuals + totalExpenses;
+                        const profit = totalBudget - totalExpense;
+
+                        detailsHtml = `<div class="profit-summary">
+                            <p><strong>Total Budget:</strong> ${totalBudget.toLocaleString()}</p>
+                            <p><strong>Total Expense:</strong> ${totalExpense.toLocaleString()}</p>
+                            <hr>
+                            <p><strong>Profit:</strong> ${profit.toLocaleString()}</p>
+                        </div>`;
+                        break;
+                    case 'payment':
+                        const { data: paymentRows, error: paymentError } = await supabase.from('payment_details').select('*').eq('site_id', siteId);
+                        if (paymentError) { detailsHtml = '<p class="text-danger">Error loading payment details.</p>'; break; }
+                        detailsHtml = '<table class="table table-striped"><thead><tr><th>Date</th><th>Amount</th><th>Type</th></tr></thead><tbody>';
+                        paymentRows.forEach(row => {
+                            detailsHtml += `<tr><td>${new Date(row.created_at).toLocaleDateString()}</td><td>${row.amount.toLocaleString()}</td><td>${row.payment_type}</td></tr>`;
+                        });
+                        detailsHtml += '</tbody></table>';
+                        break;
+                    default:
+                         detailsHtml = '<p>No detailed view available for this KPI.</p>';
+                         break;
+
+                }
+                 modalBody.innerHTML = backButton + detailsHtml;
+                 modalTitle.textContent = title;
+                 return;
+
+            }
+
+
+            let kpiTitle = '';
+            let amountColumnHeader = 'Amount (PKR)';
+            let tableBody = '';
+
+            switch (kpi) {
+                case 'total_sites':
+                    kpiTitle = 'Total Sites';
+                    amountColumnHeader = 'Status';
+                    sites.forEach(site => {
+                        tableBody += `<tr><td>${site.site_name}</td><td>${site.site_status || 'N/A'}</td></tr>`;
+                    });
+                    break;
+                case 'completed_sites':
+                    kpiTitle = 'Completed Sites';
+                    amountColumnHeader = '';
+                    const completedSites = sites.filter(s => s.site_status && s.site_status.toLowerCase() === 'completed');
+                    completedSites.forEach(site => {
+                        tableBody += `<tr><td>${site.site_name}</td></tr>`;
+                    });
+                    break;
+                case 'ongoing_sites':
+                    kpiTitle = 'Ongoing Sites';
+                    amountColumnHeader = '';
+                    const ongoingSites = sites.filter(s => s.site_status && s.site_status.toLowerCase() === 'ongoing');
+                    ongoingSites.forEach(site => {
+                        tableBody += `<tr><td>${site.site_name}</td></tr>`;
+                    });
+                    break;
+                case 'boq':
+                    kpiTitle = 'BOQ Amount by Site';
+                    const { data: boqRows, error: boqError } = await supabase.from('boq_details').select('site_id, total');
+                    if (boqError) { modalBody.innerHTML = '<p class="text-danger">Error loading BOQ data.</p>'; return; }
+                    const boqData = boqRows.reduce((acc, row) => {
+                        const siteName = siteMap[row.site_id] || 'Unknown Site';
+                        if (!acc[siteName]) acc[siteName] = 0;
+                        acc[siteName] += row.total;
+                        return acc;
+                    }, {});
+                    for (const siteName in boqData) {
+                        tableBody += `<tr class="drillable-row" data-site-name="${siteName}" data-kpi="boq"><td>${siteName}</td><td>${boqData[siteName].toLocaleString()}</td></tr>`;
+                    }
+                    break;
+                case 'budget':
+                    kpiTitle = 'Budget Amount by Site';
+                    const { data: budgetRows, error: budgetError } = await supabase.from('budget_details').select('site_id, total');
+                    if (budgetError) { modalBody.innerHTML = '<p class="text-danger">Error loading budget data.</p>'; return; }
+                    const budgetData = budgetRows.reduce((acc, row) => {
+                        const siteName = siteMap[row.site_id] || 'Unknown Site';
+                        if (!acc[siteName]) acc[siteName] = 0;
+                        acc[siteName] += row.total;
+                        return acc;
+                    }, {});
+                    for (const siteName in budgetData) {
+                        tableBody += `<tr class="drillable-row" data-site-name="${siteName}" data-kpi="budget"><td>${siteName}</td><td>${budgetData[siteName].toLocaleString()}</td></tr>`;
+                    }
+                    break;
+                case 'expense':
+                    kpiTitle = 'Expense Amount by Site';
+                    const { data: actualRows, error: actualError } = await supabase.from('actual_details').select('site_id, total');
+                    const { data: expenseRows, error: expenseError } = await supabase.from('expense_entries').select('site, amount');
+                    if (actualError || expenseError) { modalBody.innerHTML = '<p class="text-danger">Error loading expense data.</p>'; return; }
+                    const expenseData = {};
+                    actualRows.forEach(row => {
+                        const siteName = siteMap[row.site_id] || 'Unknown Site';
+                        if (!expenseData[siteName]) expenseData[siteName] = 0;
+                        expenseData[siteName] += row.total;
+                    });
+                    expenseRows.forEach(row => {
+                        const siteName = row.site || 'Unknown Site';
+                        if (!expenseData[siteName]) expenseData[siteName] = 0;
+                        expenseData[siteName] += row.amount;
+                    });
+                    for (const siteName in expenseData) {
+                        tableBody += `<tr class="drillable-row" data-site-name="${siteName}" data-kpi="expense"><td>${siteName}</td><td>${expenseData[siteName].toLocaleString()}</td></tr>`;
+                    }
+                    break;
+                case 'profit':
+                    kpiTitle = 'Profit Amount by Site';
+                    const { data: budgetProfitRows, error: budgetProfitError } = await supabase.from('budget_details').select('site_id, total');
+                    const { data: actualProfitRows, error: actualProfitError } = await supabase.from('actual_details').select('site_id, total');
+                    const { data: expenseProfitRows, error: expenseProfitError } = await supabase.from('expense_entries').select('site, amount');
+                    if (budgetProfitError || actualProfitError || expenseProfitError) { modalBody.innerHTML = '<p class="text-danger">Error loading profit data.</p>'; return; }
+                    const profitData = {};
+                    budgetProfitRows.forEach(row => {
+                        const siteName = siteMap[row.site_id] || 'Unknown Site';
+                        if (!profitData[siteName]) profitData[siteName] = { budget: 0, expense: 0 };
+                        profitData[siteName].budget += row.total;
+                    });
+                    actualProfitRows.forEach(row => {
+                        const siteName = siteMap[row.site_id] || 'Unknown Site';
+                        if (!profitData[siteName]) profitData[siteName] = { budget: 0, expense: 0 };
+                        profitData[siteName].expense += row.total;
+                    });
+                    expenseProfitRows.forEach(row => {
+                        const siteName = row.site || 'Unknown Site';
+                        if (!profitData[siteName]) profitData[siteName] = { budget: 0, expense: 0 };
+                        profitData[siteName].expense += row.amount;
+                    });
+                    for (const siteName in profitData) {
+                        const profit = profitData[siteName].budget - profitData[siteName].expense;
+                        tableBody += `<tr class="drillable-row" data-site-name="${siteName}" data-kpi="profit"><td>${siteName}</td><td>${profit.toLocaleString()}</td></tr>`;
+                    }
+                    break;
+                case 'payment':
+                    kpiTitle = 'Payment Amount by Site';
+                    const { data: paymentRows, error: paymentError } = await supabase.from('payment_details').select('site_id, amount');
+                    if (paymentError) { modalBody.innerHTML = '<p class="text-danger">Error loading payment data.</p>'; return; }
+                    const paymentData = paymentRows.reduce((acc, row) => {
+                        const siteName = siteMap[row.site_id] || 'Unknown Site';
+                        if (!acc[siteName]) acc[siteName] = 0;
+                        acc[siteName] += row.amount;
+                        return acc;
+                    }, {});
+                    for (const siteName in paymentData) {
+                        tableBody += `<tr class="drillable-row" data-site-name="${siteName}" data-kpi="payment"><td>${siteName}</td><td>${paymentData[siteName].toLocaleString()}</td></tr>`;
+                    }
+                    break;
+                default:
+                    modalBody.innerHTML = '<p>Invalid KPI.</p>';
+                    return;
+            }
+
+            tableHtml = `<table class="table table-hover"><thead><tr><th>Site Name</th><th>${amountColumnHeader}</th></tr></thead><tbody>${tableBody}</tbody></table>`;
+            modalTitle.textContent = kpiTitle;
+            modalBody.innerHTML = tableHtml;
+
+            modalBody.querySelectorAll('.drillable-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const siteName = row.getAttribute('data-site-name');
+                    const kpi = row.getAttribute('data-kpi');
+                    showKpiDetails(kpi, siteName);
+                });
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Site Progress - HS Priat Software</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <!-- Bootstrap + Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        :root{
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+            --radius: 14px;
+            --accent:#198754;
+        }
+        body{
+            font-family: var(--font-family);
+            background:var(--body-bg);
+            margin:0;
+            display:flex;
+        }
+
+        /* Sidebar (kept visually similar to original) */
+        .sidebar{
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background:var(--sidebar-bg);
+            color:#fff;
+            height:100vh;
+            position:fixed;
+            top:0;
+            left:0;
+            padding:20px;
+            overflow:auto;
+        }
+        
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .logo{font-size:1.6rem;font-weight:bold;text-align:center;margin-bottom:10px}
+        .sidebar .subtitle{font-size:0.9rem;color:#b8c6d3;text-align:center;margin-bottom:30px}
+        .sidebar .menu a{color:#e6eef7;text-decoration:none;padding:12px 15px;display:block;border-radius:5px;margin-bottom:8px;transition: background-color 0.3s, color 0.3s;}
+        .sidebar .menu a.active, .sidebar .menu a:hover{background:var(--primary-color);color:#fff}
+
+        .main{
+            margin-left:280px;
+            padding:28px;
+            width:calc(100% - 260px);
+            min-height:100vh;
+        }
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+        .header h1{font-size:1.7rem;margin:0;color:#1f2d3d}
+        .summary-row{
+            display:grid;
+            grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
+            gap:18px;
+            margin-bottom:20px;
+            align-items:stretch;
+        }
+
+        /* Phase card */
+        .phase-card{
+            background:var(--card-bg);
+            border-radius:var(--radius);
+            padding:18px;
+            box-shadow: 6px 8px 22px rgba(18,38,63,0.06);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            text-align:center;
+            position:relative;
+        }
+        .phase-name{font-weight:700;color:var(--primary-color);margin-top:10px}
+        .phase-count{font-size:1.25rem;font-weight:700;margin-top:8px;color:#21324a}
+        .phase-sub{font-size:0.9rem;color:var(--secondary-color);margin-top:4px}
+
+        /* Icon container and SVG fill */
+        .icon-wrap{
+            width:108px;
+            height:108px;
+            border-radius:18px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            position:relative;
+            background:linear-gradient(180deg, rgba(26, 188, 156, 0.06), rgba(26, 188, 156, 0.02));
+            box-shadow: inset 0 -6px 16px rgba(26, 188, 156, 0.02);
+        }
+        .icon-wrap svg{width:72px;height:72px}
+
+        /* progress bar */
+        .mini-bar{
+            width:100%;
+            height:10px;
+            border-radius:999px;
+            background: #eef3ff;
+            margin-top:12px;
+            overflow:hidden;
+        }
+        .mini-fill{
+            height:100%;
+            width:0%;
+            background: linear-gradient(90deg,var(--primary-color), #5bc0f3);
+            transition: width 900ms cubic-bezier(.2,.9,.3,1);
+        }
+
+        /* Accordion lists */
+        .lists-section{
+            margin-top:18px;
+            display:grid;
+            gap:12px;
+        }
+        .site-item{
+            background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:8px;
+            display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 18px rgba(19,32,51,0.03);
+        }
+
+        /* loader overlay */
+        
+
+        /* small utilities */
+        .muted{color:var(--secondary-color)}
+        .centered{display:flex;align-items:center;gap:10px;justify-content:center}
+        @media (max-width:820px){
+            .icon-wrap{width:84px;height:84px}
+            .icon-wrap svg{width:56px;height:56px}
+            .phase-count{font-size:1.05rem}
+        }
+    </style>
+</head>
+<body>
+    
+
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html" class="active"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <main class="main">
+        <div class="header">
+            <h1>Site Progress</h1>
+            <div class="d-flex align-items-center">
+                <span class="me-3">Welcome! <strong id="admin-name">Admin</strong></span>
+                <button id="logout-btn" class="btn btn-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- TOP: Phase distribution summary with filling icons -->
+        <section class="summary-row" aria-label="Phase summary">
+            <!-- Card: Initial Phase -->
+            <div class="phase-card" id="card-initial">
+                <div class="icon-wrap" aria-hidden="true">
+                    <!-- Blueprint/Planning icon for Initial Phase -->
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Initial phase icon - Blueprint">
+                        <rect x="10" y="10" width="44" height="44" rx="2" fill="#e9f2ff" stroke="#cbe4ff" stroke-width="2"/>
+                        <path d="M18 18h28v28H18z" fill="#fff" stroke="#2b5fa8" stroke-width="1"/>
+                        <path d="M22 22h20v20H22z" fill="#e9f2ff" stroke="#2b5fa8" stroke-width="1"/>
+                        <path d="M26 26h12v12H26z" fill="#fff" stroke="#2b5fa8" stroke-width="1"/>
+                        <path d="M10 14h44M10 24h44M10 34h44M10 44h44" stroke="#b5d3ff" stroke-width="0.5"/>
+                        <path d="M14 10v44M24 10v44M34 10v44M44 10v44" stroke="#b5d3ff" stroke-width="0.5"/>
+                        <!-- Fill rect (we will change its y to simulate fill) -->
+                        <defs>
+                            <clipPath id="clipInitial"><rect x="10" y="10" width="44" height="44" rx="2"/></clipPath>
+                        </defs>
+                        <rect id="fill-initial" x="10" y="54" width="44" height="0" clip-path="url(#clipInitial)" fill="url(#gradInit)"/>
+                        <defs>
+                            <linearGradient id="gradInit" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#0d6efd" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#60b0ff" stop-opacity="0.95"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="phase-name">Initial Phase</div>
+                <div class="phase-count" id="count-initial">0 Sites</div>
+                <div class="phase-sub" id="pct-initial">0%</div>
+                <div class="mini-bar" aria-hidden="true">
+                    <div class="mini-fill" id="mini-initial" style="width:0%"></div>
+                </div>
+            </div>
+
+            <!-- Card: ICR-01 -->
+            <div class="phase-card" id="card-icr01">
+                <div class="icon-wrap">
+                    <!-- Bricks icon for Material Verification -->
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Material verification icon - Bricks">
+                        <rect x="12" y="16" width="40" height="32" rx="2" fill="#fff2e9" stroke="#ffd6b3" stroke-width="2"/>
+                        <g fill="#b85a00">
+                            <rect x="14" y="18" width="12" height="6" rx="1"/>
+                            <rect x="28" y="18" width="12" height="6" rx="1"/>
+                            <rect x="42" y="18" width="8" height="6" rx="1"/>
+
+                            <rect x="18" y="26" width="12" height="6" rx="1"/>
+                            <rect x="32" y="26" width="12" height="6" rx="1"/>
+                            <rect x="14" y="34" width="12" height="6" rx="1"/>
+                            <rect x="28" y="34" width="12" height="6" rx="1"/>
+                            <rect x="42" y="34" width="8" height="6" rx="1"/>
+
+                            <rect x="18" y="42" width="12" height="6" rx="1"/>
+                            <rect x="32" y="42" width="12" height="6" rx="1"/>
+                        </g>
+                        <clipPath id="clipIcr"><rect x="12" y="16" width="40" height="32" rx="2"/></clipPath>
+                        <rect id="fill-icr01" x="12" y="48" width="40" height="0" clip-path="url(#clipIcr)" fill="url(#gradIcr)"/>
+                        <defs>
+                            <linearGradient id="gradIcr" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#A52A2A" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#CD5C5C" stop-opacity="0.95"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="phase-name">Material Verification — ICR-01</div>
+                <div class="phase-count" id="count-icr01">0 Sites</div>
+                <div class="phase-sub" id="pct-icr01">0%</div>
+                <div class="mini-bar">
+                    <div class="mini-fill" id="mini-icr01" style="width:0%"></div>
+                </div>
+            </div>
+
+            <!-- Card: ICR-02 -->
+            <div class="phase-card" id="card-icr02">
+                <div class="icon-wrap">
+                    <!-- Building/Construction icon for Site Completion -->
+                    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Site completion icon - Building">
+                        <rect x="16" y="24" width="32" height="28" rx="2" fill="#eefcf2" stroke="#d6f5de" stroke-width="2"/>
+                        <path d="M24 24v-8h16v8" fill="none" stroke="#2d8f5a" stroke-width="2" stroke-linecap="round"/>
+                        <rect x="20" y="28" width="8" height="8" fill="#fff" stroke="#2d8f5a" stroke-width="1"/>
+                        <rect x="36" y="28" width="8" height="8" fill="#fff" stroke="#2d8f5a" stroke-width="1"/>
+                        <rect x="28" y="38" width="8" height="8" fill="#fff" stroke="#2d8f5a" stroke-width="1"/>
+                        <clipPath id="clipIcr2"><rect x="16" y="24" width="32" height="28" rx="2"/></clipPath>
+                        <rect id="fill-icr02" x="16" y="52" width="32" height="0" clip-path="url(#clipIcr2)" fill="url(#gradIcr2)"/>
+                        <defs>
+                            <linearGradient id="gradIcr2" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#57d28b" stop-opacity="0.95"/>
+                                <stop offset="100%" stop-color="#8fe9b0" stop-opacity="0.95"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="phase-name">Site Completion — ICR-02</div>
+                <div class="phase-count" id="count-icr02">0 Sites</div>
+                <div class="phase-sub" id="pct-icr02">0%</div>
+                <div class="mini-bar">
+                    <div class="mini-fill" id="mini-icr02" style="width:0%"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="map-section mt-4">
+            <h2>Site Locations</h2>
+            <div id="siteMap" style="height: 400px; width: 100%; border-radius: var(--radius); box-shadow: 6px 8px 22px rgba(18,38,63,0.06);"></div>
+        </section>
+
+        <!-- Detailed accordion lists -->
+        <section class="lists-section mt-4" aria-label="Detailed lists">
+            <div class="accordion" id="phaseAccordion">
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingInitial">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInitial" aria-expanded="false" aria-controls="collapseInitial">
+                            Initial Phase Sites <span class="ms-2 muted" id="label-initial">0 sites</span>
+                        </button>
+                    </h2>
+                    <div id="collapseInitial" class="accordion-collapse collapse" aria-labelledby="headingInitial" data-bs-parent="#phaseAccordion">
+                        <div class="accordion-body" id="list-initial">
+                            <!-- initial sites go here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingIcr01">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIcr01" aria-expanded="false" aria-controls="collapseIcr01">
+                            Material Verification — ICR-01 <span class="ms-2 muted" id="label-icr01">0 sites</span>
+                        </button>
+                    </h2>
+                    <div id="collapseIcr01" class="accordion-collapse collapse" aria-labelledby="headingIcr01" data-bs-parent="#phaseAccordion">
+                        <div class="accordion-body" id="list-icr01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingIcr02">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIcr02" aria-expanded="false" aria-controls="collapseIcr02">
+                            Site Completion — ICR-02 <span class="ms-2 muted" id="label-icr02">0 sites</span>
+                        </button>
+                    </h2>
+                    <div id="collapseIcr02" class="accordion-collapse collapse" aria-labelledby="headingIcr02" data-bs-parent="#phaseAccordion">
+                        <div class="accordion-body" id="list-icr02">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bootstrap JS (bundle) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Supabase client (kept same as your file)
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        // Map variable
+        let siteMap = null;
+        let siteMarkers = L.featureGroup(); // To manage markers
+
+        // Function to initialize and update map
+        function initMap(sites) {
+            if (siteMap === null) {
+                // Define tile layers
+                const streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                });
+
+                const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                });
+
+                // Base maps for layer control
+                const baseMaps = {
+                    "Street View": streetMap,
+                    "Satellite View": satelliteMap
+                };
+
+                // Initialize map
+                siteMap = L.map('siteMap', {
+                    layers: [streetMap] // Default layer
+                }).setView([30.3753, 69.3451], 4);
+
+                // Add layer control
+                L.control.layers(baseMaps).addTo(siteMap);
+            }
+
+            siteMarkers.clearLayers(); // Clear existing markers
+
+            sites.forEach(site => {
+                const lat = parseFloat(site.latitude);
+                const lon = parseFloat(site.longitude);
+
+                if (!isNaN(lat) && !isNaN(lon) && (lat !== 0 || lon !== 0)) {
+                    const marker = L.marker([lon, lat]).addTo(siteMap)
+                        .bindTooltip(site.site_name)
+                        .bindPopup(`<b>${site.site_name}</b><br>Status: ${site.site_status || 'N/A'}`);
+                    siteMarkers.addLayer(marker);
+                } else {
+                    console.warn('Skipping marker for site due to invalid coordinates:', site.site_name, site.latitude, site.longitude);
+                }
+            });
+
+            siteMap.addLayer(siteMarkers);
+
+            // Fit map to markers if there are any
+            if (siteMarkers.getLayers().length > 0) {
+                siteMap.fitBounds(siteMarkers.getBounds(), { padding: [50, 50], maxZoom: 4 });
+            }
+        }
+
+        // DOM references
+        const loading = document.getElementById('loading-indicator');
+
+        const countInitialEl = document.getElementById('count-initial');
+        const countIcr01El = document.getElementById('count-icr01');
+        const countIcr02El = document.getElementById('count-icr02');
+
+        const pctInitialEl = document.getElementById('pct-initial');
+        const pctIcr01El = document.getElementById('pct-icr01');
+        const pctIcr02El = document.getElementById('pct-icr02');
+
+        const miniInitial = document.getElementById('mini-initial');
+        const miniIcr01 = document.getElementById('mini-icr01');
+        const miniIcr02 = document.getElementById('mini-icr02');
+
+        const listInitial = document.getElementById('list-initial');
+        const listIcr01 = document.getElementById('list-icr01');
+        const listIcr02 = document.getElementById('list-icr02');
+
+        const labelInitial = document.getElementById('label-initial');
+        const labelIcr01 = document.getElementById('label-icr01');
+        const labelIcr02 = document.getElementById('label-icr02');
+
+        // SVG fill rects (we update 'y' & 'height' to simulate vertical fill)
+        const fillInitialRect = document.getElementById('fill-initial');
+        const fillIcr01Rect = document.getElementById('fill-icr01');
+        const fillIcr02Rect = document.getElementById('fill-icr02');
+
+        // Update counts, percentages and animate fills
+        function updatePhaseUI(counts) {
+            const total = counts.initial + counts.icr01 + counts.icr02 || 1;
+
+            const pInitial = Math.round((counts.initial / total) * 100);
+            const pIcr01 = Math.round((counts.icr01 / total) * 100);
+            const pIcr02 = Math.round((counts.icr02 / total) * 100);
+
+            // text
+            countInitialEl.textContent = `${counts.initial} Site${counts.initial!==1 ? 's' : ''}`;
+            countIcr01El.textContent = `${counts.icr01} Site${counts.icr01!==1 ? 's' : ''}`;
+            countIcr02El.textContent = `${counts.icr02} Site${counts.icr02!==1 ? 's' : ''}`;
+
+            pctInitialEl.textContent = `${pInitial}%`;
+            pctIcr01El.textContent = `${pIcr01}%`;
+            pctIcr02El.textContent = `${pIcr02}%`;
+
+            labelInitial.textContent = `${counts.initial} sites`;
+            labelIcr01.textContent = `${counts.icr01} sites`;
+            labelIcr02.textContent = `${counts.icr02} sites`;
+
+            // mini bars
+            requestAnimationFrame(()=> {
+                miniInitial.style.width = `${pInitial}%`;
+                miniIcr01.style.width = `${pIcr01}%`;
+                miniIcr02.style.width = `${pIcr02}%`;
+            });
+
+            // SVG vertical fill calculations (each clip area height differs, so we compute heights)
+            // For each SVG we know the clip rect top & height:
+            // initial: clip y=22 height=30  => y ranges 22..52
+            // icr01: clip y=14 height=36    => y ranges 14..50
+            // icr02: clip y=14 height=40    => y ranges 14..54
+            const initialClipTop = 22, initialClipH = 30;
+            const icr01Top = 14, icr01H = 36;
+            const icr02Top = 14, icr02H = 40;
+
+            // compute filled height (from bottom)
+            const fillHInitial = Math.round(initialClipH * (pInitial/100));
+            const fillYInitial = initialClipTop + (initialClipH - fillHInitial);
+            fillInitialRect.setAttribute('y', String(fillYInitial));
+            fillInitialRect.setAttribute('height', String(fillHInitial));
+
+            const fillHIcr01 = Math.round(icr01H * (pIcr01/100));
+            const fillYIcr01 = icr01Top + (icr01H - fillHIcr01);
+            fillIcr01Rect.setAttribute('y', String(fillYIcr01));
+            fillIcr01Rect.setAttribute('height', String(fillHIcr01));
+
+            const fillHIcr02 = Math.round(icr02H * (pIcr02/100));
+            const fillYIcr02 = icr02Top + (icr02H - fillHIcr02);
+            fillIcr02Rect.setAttribute('y', String(fillYIcr02));
+            fillIcr02Rect.setAttribute('height', String(fillHIcr02));
+        }
+
+        async function loadSiteProgress() {
+            try {
+                const { data: sites, error } = await supabase.from('site_details').select('id, site_name, wo_date, icr1_status, icr1_date, longitude, latitude');
+                if (error) {
+                    console.error('Error fetching sites:', error);
+                    alert('Failed to fetch site data (see console).');
+                    return;
+                }
+
+                // Clear lists
+                listInitial.innerHTML = '';
+                listIcr01.innerHTML = '';
+                listIcr02.innerHTML = '';
+
+                let counts = { initial: 0, icr01: 0, icr02: 0 };
+
+                // Build DOM lists and counts
+                sites.forEach(site => {
+                    // decide phase
+                    if (!site.wo_date) {
+                        counts.initial++;
+                        const el = createSiteRow(site, 'initial');
+                        listInitial.appendChild(el);
+                    } else if (site.icr1_status === 'Completed') {
+                        counts.icr02++;
+                        const el = createSiteRow(site, 'icr02');
+                        listIcr02.appendChild(el);
+                    } else {
+                        counts.icr01++;
+                        const el = createSiteRow(site, 'icr01', true, site.icr1_status);
+                        listIcr01.appendChild(el);
+                    }
+                });
+
+                updatePhaseUI(counts);
+                initMap(sites); // Call initMap here
+
+            } catch (err) {
+                console.error('Failed to load site progress:', err);
+            }
+        }
+
+        // Creates a row element for a site. If allowStatusChange true, adds a select for ICR-01.
+        function createSiteRow(site, phase, allowStatusChange=false, currentStatus='In Progress') {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'site-item';
+
+            const left = document.createElement('div');
+            left.innerHTML = `<strong>${escapeHtml(site.site_name)}</strong> <div class="muted small">ID: ${site.id}</div>`;
+
+            // Calculate days to completion
+            if (site.wo_date) {
+                const woDate = new Date(site.wo_date);
+                const completionDate = new Date(woDate);
+                completionDate.setDate(woDate.getDate() + 90); // 90 days for total completion
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+
+                const timeDiffCompletion = completionDate.getTime() - today.getTime();
+                const daysToCompletion = Math.ceil(timeDiffCompletion / (1000 * 60 * 60 * 24));
+
+                let completionText = '';
+                if (daysToCompletion > 0) {
+                    completionText = `<div class="muted small">Completion in: ${daysToCompletion} days</div>`;
+                } else if (daysToCompletion <= 0) {
+                    completionText = `<div class="muted small" style="color: red;">Completion Overdue</div>`;
+                }
+                left.innerHTML += completionText;
+
+                // Calculate days left for ICR-01
+                const icr01DueDate = new Date(woDate);
+                icr01DueDate.setDate(woDate.getDate() + 30); // 30 days for ICR-01
+
+                const timeDiffIcr01 = icr01DueDate.getTime() - today.getTime();
+                const daysLeftIcr01 = Math.ceil(timeDiffIcr01 / (1000 * 60 * 60 * 24));
+
+                let icr01Text = '';
+                if (site.icr1_status === 'Completed') {
+                    icr01Text = `<div class="muted small" style="color: green;">ICR-01: Completed</div>`;
+                } else if (daysLeftIcr01 > 0) {
+                    icr01Text = `<div class="muted small">ICR-01 Due in: ${daysLeftIcr01} days</div>`;
+                } else if (daysLeftIcr01 <= 0) {
+                    icr01Text = `<div class="muted small" style="color: red;">ICR-01 Overdue</div>`;
+                }
+                left.innerHTML += icr01Text;
+            } else {
+                left.innerHTML += `<div class="muted small">WO Date not set</div>`;
+            }
+
+            const right = document.createElement('div');
+            right.style.minWidth = '170px';
+            right.style.display = 'flex';
+            right.style.justifyContent = 'flex-end';
+            right.style.gap = '8px';
+            right.style.alignItems = 'center';
+
+            if (allowStatusChange) {
+                const select = document.createElement('select');
+                select.className = 'form-select form-select-sm';
+                select.style.width = '150px';
+                select.dataset.siteId = site.id;
+
+                const opt1 = new Option('In Progress', 'In Progress');
+                const opt2 = new Option('Completed', 'Completed');
+                select.add(opt1);
+                select.add(opt2);
+                select.value = currentStatus || 'In Progress';
+
+                select.addEventListener('change', async (e) => {
+                    const newStatus = e.target.value;
+                    const siteId = e.target.dataset.siteId;
+                    // update supabase then reload
+                    const { error } = await supabase.from('site_details').update({ icr1_status: newStatus }).eq('id', siteId);
+                    if (error) {
+                        console.error('Update error:', error);
+                        alert('Failed to update status');
+                    } else {
+                        // local optimistic update: show loader and reload
+                        loading.style.display = 'flex';
+                        await loadSiteProgress();
+                    }
+                });
+
+                right.appendChild(select);
+            } else {
+                const badge = document.createElement('div');
+                badge.className = 'small muted';
+                badge.textContent = phase === 'icr02' ? 'Completed' : '—';
+                right.appendChild(badge);
+            }
+
+            wrapper.appendChild(left);
+            wrapper.appendChild(right);
+            return wrapper;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+        }
+
+        // Admin name loader & logout
+        async function loadAdminName() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const name = user.user_metadata?.display_name || user.user_metadata?.full_name || user.email || 'Admin';
+                    document.getElementById('admin-name').textContent = name;
+                }
+            } catch (e) {
+                console.warn('Could not load user name', e);
+            }
+        }
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = "login.html";
+        });
+
+        // initial load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadAdminName();
+            loadSiteProgress();
+        });
+
+    </script>
+</body>
+</html>

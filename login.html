@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Site Management Pro</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+  <style>
+    :root {
+      --primary-color: #1abc9c; /* Bright Teal */
+      --primary-dark: #16a085;
+      --primary-light: #48c9b0;
+    }
+    
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(100px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .login-container {
+      animation: slideInRight 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    
+    .brand-section {
+      animation: slideInLeft 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    
+    .floating-icon {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .login-button:hover {
+      animation: pulse 0.3s ease-in-out;
+    }
+    
+    .bg-pattern {
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(26, 188, 156, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(52, 152, 219, 0.1) 0%, transparent 50%);
+    }
+    
+    .glass-effect {
+      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .input-focus:focus {
+      box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1);
+    }
+    
+    .primary-gradient {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    }
+    
+    .text-primary {
+      color: var(--primary-color);
+    }
+    
+    .border-primary {
+      border-color: var(--primary-color);
+    }
+    
+    .focus-primary:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-teal-900 to-slate-800 bg-pattern flex">
+  <!-- Left Side - Branding -->
+  <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+    <div class="brand-section absolute inset-0 flex flex-col justify-center items-center p-12 text-white">
+      <!-- Background Elements -->
+      <div class="absolute top-20 left-20 w-32 h-32 rounded-full opacity-20 floating-icon primary-gradient"></div>
+      <div class="absolute bottom-32 right-16 w-24 h-24 bg-teal-400 rounded-lg opacity-20 floating-icon" style="animation-delay: -2s;"></div>
+      <div class="absolute top-1/2 left-1/3 w-16 h-16 bg-teal-300 rounded-full opacity-15 floating-icon" style="animation-delay: -4s;"></div>
+      
+      <!-- Main Content -->
+      <div class="relative z-10 text-center max-w-md">
+        <div class="mb-8 flex justify-center">
+          <div class="relative">
+            <div class="w-20 h-20 primary-gradient rounded-2xl flex items-center justify-center shadow-2xl">
+              <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <div class="absolute -top-2 -right-2 w-6 h-6 bg-teal-300 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        
+        <h1 class="text-4xl font-bold mb-4 bg-gradient-to-r from-teal-300 to-teal-100 bg-clip-text text-transparent">
+          Site Management Pro
+        </h1>
+        <p class="text-xl text-teal-100 mb-8 leading-relaxed">
+          Advanced construction site management and field operations platform
+        </p>
+        
+        <div class="space-y-4 text-left">
+          <div class="flex items-center space-x-3">
+            <div class="w-2 h-2 bg-teal-300 rounded-full"></div>
+            <span class="text-teal-100">Real-time project monitoring</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div class="w-2 h-2 bg-teal-400 rounded-full"></div>
+            <span class="text-teal-100">Field staff coordination</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <div class="w-2 h-2 bg-teal-200 rounded-full"></div>
+            <span class="text-teal-100">Resource optimization</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Right Side - Login Form -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <div class="login-container w-full max-w-md">
+      <div class="glass-effect rounded-3xl p-8 shadow-2xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-16 h-16 primary-gradient rounded-2xl mb-4 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          </div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
+          <p class="text-gray-600">Sign in to your account</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="text-red-500 text-sm mb-4 hidden p-3 bg-red-50 rounded-lg border border-red-200"></div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="space-y-6">
+          <div class="space-y-1">
+            <label for="email" class="block text-sm font-semibold text-gray-700">Email Address</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                </svg>
+              </div>
+              <input 
+                type="email" 
+                id="email" 
+                class="focus-primary block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 transition-all duration-200" 
+                placeholder="Enter your email address" 
+                required
+              />
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label for="password" class="block text-sm font-semibold text-gray-700">Password</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                </svg>
+              </div>
+              <input 
+                type="password" 
+                id="password" 
+                class="focus-primary block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 transition-all duration-200" 
+                placeholder="Enter your password" 
+                required
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="login-button w-full primary-gradient hover:opacity-90 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:shadow-lg flex items-center justify-center gap-2 opacity-100 visible"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+            </svg>
+            Sign In to Dashboard
+          </button>
+        </form>
+
+        <!-- Additional Options -->
+        <div class="mt-6 text-center">
+          <a href="#" class="text-sm text-primary hover:opacity-80 transition-colors duration-200 font-medium">
+            Forgot your password?
+          </a>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 pt-6 border-t border-gray-200 text-center">
+          <p class="text-xs text-gray-500">
+            &copy; 2025 Site Management Suite Pro. All rights reserved.
+          </p>
+          <div class="mt-2 flex justify-center space-x-4 text-xs text-gray-400">
+            <a href="#" class="hover:text-gray-600 transition-colors">Privacy</a>
+            <span>•</span>
+            <a href="#" class="hover:text-gray-600 transition-colors">Terms</a>
+            <span>•</span>
+            <a href="#" class="hover:text-gray-600 transition-colors">Support</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const SUPABASE_URL = 'https://mxktarizsqttwwzbqgld.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const loginForm = document.getElementById('login-form');
+    const errorMessage = document.getElementById('error-message');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      // Show loading state
+      const submitButton = e.target.querySelector('button[type="submit"]');
+      const originalText = submitButton.innerHTML;
+      submitButton.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Signing In...
+      `;
+      submitButton.disabled = true;
+
+      try {
+        // Sign in the user
+        const { data, error } = await client.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          errorMessage.textContent = error.message;
+          errorMessage.classList.remove('hidden');
+          return;
+        }
+
+        // Fetch user role from "users" table
+        const { data: userMeta, error: metaError } = await client
+          .from('users')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (metaError || !userMeta) {
+          errorMessage.textContent = 'User role not assigned. Contact admin.';
+          errorMessage.classList.remove('hidden');
+          return;
+        }
+
+        const role = userMeta.role;
+
+        // Success feedback
+        submitButton.innerHTML = `
+          <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Welcome back!
+        `;
+
+        // Redirect based on role after short delay
+        setTimeout(() => {
+          if (role === 'Admin') {
+            window.location.href = 'admin-dashboard.html';
+          } else if (role === 'Manager') {
+            window.location.href = 'manager-dashboard.html';
+          } else if (role === 'Field Staff') {
+            window.location.href = 'field-dashboard.html';
+          } else {
+            errorMessage.textContent = 'Unknown role. Contact administrator.';
+            errorMessage.classList.remove('hidden');
+          }
+        }, 1000);
+
+      } catch (err) {
+        errorMessage.textContent = 'Login failed. Please try again.';
+        errorMessage.classList.remove('hidden');
+      } finally {
+        // Reset button if there's an error
+        if (errorMessage.classList.contains('hidden')) return;
+        
+        setTimeout(() => {
+          submitButton.innerHTML = originalText;
+          submitButton.disabled = false;
+        }, 2000);
+      }
+    });
+
+    // Hide error message when user starts typing
+    document.getElementById('email').addEventListener('input', () => {
+      errorMessage.classList.add('hidden');
+    });
+    
+    document.getElementById('password').addEventListener('input', () => {
+      errorMessage.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

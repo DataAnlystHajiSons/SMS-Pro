@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Management - HS Priat Software</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: fixed;
+            top: 0;
+            left: -260px;
+            height: 100%;
+            z-index: 1040;
+            transition: left 0.3s ease;
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            white-space: nowrap;
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (min-width: 768px) {
+            .sidebar {
+                left: 0;
+            }
+            .main-content {
+                margin-left: 260px;
+            }
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085;
+            border-color: #16a085;
+        }
+
+        #toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1050;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 1rem;
+        }
+
+        .hamburger-menu {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 767px) {
+            .hamburger-menu {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="hamburger-menu" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="sidebar" id="main-sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="manager-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="expense-form-manager.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="attendance.html"><i class="fa-solid fa-user-check"></i> <span>Attendance</span></a>
+            <a href="survey-form-new.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html" class="active"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div id="toast"></div>
+
+    <div class="main-content">
+        <h1>Design Management</h1>
+        
+        <div class="mb-3">
+            <label for="farmerSearch" class="form-label">Select Farmer from Survey's</label>
+            <input type="text" id="farmerSearch" class="form-control" placeholder="Search for a farmer...">
+            <div id="farmerSuggestions" class="list-group"></div>
+        </div>
+
+        <form id="designForm" class="mt-4" style="display: none;">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="totalCost" class="form-label">Total Cost</label>
+                    <input type="number" id="totalCost" class="form-control" step="0.01" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="govtShare" class="form-label">Govt Share</label>
+                    <input type="number" id="govtShare" class="form-control" step="0.01" required>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="farmerShare" class="form-label">Farmer Share</label>
+                    <input type="number" id="farmerShare" class="form-control" step="0.01" required>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="initialDesign" class="form-label">Initial Design Upload</label>
+                    <input type="file" id="initialDesign" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3" id="finalDesignContainer" style="display: none;">
+                    <label for="finalDesign" class="form-label">Final Design Upload</label>
+                    <input type="file" id="finalDesign" class="form-control">
+                </div>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" id="isApproved" class="form-check-input">
+                <label for="isApproved" class="form-check-label">Is Approved</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Design</button>
+        </form>
+
+        <div class="mt-5">
+            <h2>Existing Designs</h2>
+            <div class="card card-body mb-3">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="approvalStatusFilter" class="form-label">Approval Status</label>
+                        <select id="approvalStatusFilter" class="form-select">
+                            <option value="">All</option>
+                            <option value="true">Approved</option>
+                            <option value="false">Not Approved</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="startDateFilter" class="form-label">Start Date</label>
+                        <input type="date" id="startDateFilter" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="endDateFilter" class="form-label">End Date</label>
+                        <input type="date" id="endDateFilter" class="form-control">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button id="applyFiltersBtn" class="btn btn-primary">Apply Filters</button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Farmer Name</th>
+                            <th>Total Cost</th>
+                            <th>Govt Share</th>
+                            <th>Farmer Share</th>
+                            <th>Initial Design</th>
+                            <th>Final Design</th>
+                            <th>Approved</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="designTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        const farmerSearch = document.getElementById('farmerSearch');
+        const farmerSuggestions = document.getElementById('farmerSuggestions');
+        const designForm = document.getElementById('designForm');
+        const designTableBody = document.getElementById('designTableBody');
+        const isApprovedCheckbox = document.getElementById('isApproved');
+        const finalDesignContainer = document.getElementById('finalDesignContainer');
+        let selectedSurveyId = null;
+        let farmers = [];
+        let editingDesignId = null;
+
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.toggle('show');
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.backgroundColor = isError ? '#e74c3c' : 'var(--primary-color)';
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        async function loadFarmers() {
+            const { data, error } = await supabase.from('survey_forms').select('id, farmer_name');
+            if (error) {
+                console.error('Error loading farmers:', error);
+                return;
+            }
+            farmers = data;
+        }
+
+        farmerSearch.addEventListener('input', () => {
+            const query = farmerSearch.value.toLowerCase();
+            farmerSuggestions.innerHTML = '';
+            if (query) {
+                const filteredFarmers = farmers.filter(f => f.farmer_name.toLowerCase().includes(query));
+                filteredFarmers.forEach(farmer => {
+                    const item = document.createElement('a');
+                    item.href = '#';
+                    item.className = 'list-group-item list-group-item-action';
+                    item.textContent = farmer.farmer_name;
+                    item.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        farmerSearch.value = farmer.farmer_name;
+                        selectedSurveyId = farmer.id;
+                        farmerSuggestions.innerHTML = '';
+
+                        const { data, error } = await supabase.from('design').select('id').eq('survey_id', farmer.id).maybeSingle();
+                        if (error) {
+                            showToast('Error checking for existing design: ' + error.message, true);
+                            return;
+                        }
+
+                        if (data) {
+                            designForm.style.display = 'none';
+                            showToast('This farmer already has an assigned design, kindly check the Design Record.', true);
+                        } else {
+                            designForm.reset();
+                            editingDesignId = null;
+                            finalDesignContainer.style.display = 'none';
+                            designForm.style.display = 'block';
+                        }
+                    });
+                    farmerSuggestions.appendChild(item);
+                });
+            }
+        });
+
+        isApprovedCheckbox.addEventListener('change', (e) => {
+            finalDesignContainer.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        designForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const { data: { user } } = await supabase.auth.getUser();
+
+            const initialDesignFile = document.getElementById('initialDesign').files[0];
+            const finalDesignFile = document.getElementById('finalDesign').files[0];
+            let initial_des_url = document.getElementById('initialDesign').dataset.existingUrl || null;
+            let final_des_url = document.getElementById('finalDesign').dataset.existingUrl || null;
+
+            if (initialDesignFile) {
+                const { data, error } = await supabase.storage.from('documents').upload(`initial/${Date.now()}_${initialDesignFile.name}`, initialDesignFile);
+                if (error) { showToast('Error uploading initial design: ' + error.message, true); return; }
+                const { data: urlData } = supabase.storage.from('documents').getPublicUrl(data.path);
+                initial_des_url = urlData.publicUrl;
+            }
+
+            if (finalDesignFile) {
+                const { data, error } = await supabase.storage.from('documents').upload(`final/${Date.now()}_${finalDesignFile.name}`, finalDesignFile);
+                if (error) { showToast('Error uploading final design: ' + error.message, true); return; }
+                const { data: urlData } = supabase.storage.from('documents').getPublicUrl(data.path);
+                final_des_url = urlData.publicUrl;
+            }
+
+            const designData = {
+                survey_id: selectedSurveyId,
+                user_id: user.id,
+                total_cost: document.getElementById('totalCost').value,
+                farmer_share: document.getElementById('farmerShare').value,
+                govt_share: document.getElementById('govtShare').value,
+                is_approved: document.getElementById('isApproved').checked,
+                initial_des_url,
+                final_des_url
+            };
+
+            if (editingDesignId) {
+                updateDesign(editingDesignId, designData);
+            } else {
+                const { error } = await supabase.from('design').insert([designData]);
+                if (error) {
+                    showToast('Error saving design: ' + error.message, true);
+                } else {
+                    showToast('Design saved successfully!');
+                    designForm.reset();
+                    designForm.style.display = 'none';
+                    loadDesigns();
+                }
+            }
+        });
+
+        async function loadDesigns(filters = {}) {
+            let query = supabase.from('design').select(`
+                *,
+                survey_forms (farmer_name)
+            `);
+
+            if (filters.approvalStatus) {
+                query = query.eq('is_approved', filters.approvalStatus === 'true');
+            }
+            if (filters.startDate) {
+                query = query.gte('created_at', filters.startDate);
+            }
+            if (filters.endDate) {
+                query = query.lte('created_at', filters.endDate);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error('Error loading designs:', error);
+                return;
+            }
+
+            designTableBody.innerHTML = '';
+            data.forEach(design => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${design.survey_forms.farmer_name}</td>
+                    <td>${design.total_cost}</td>
+                    <td>${design.govt_share}</td>
+                    <td>${design.farmer_share}</td>
+                    <td><a href="${design.initial_des_url}" target="_blank">View</a></td>
+                    <td>${design.final_des_url ? `<a href="${design.final_des_url}" target="_blank">View</a>` : 'N/A'}</td>
+                    <td>${design.is_approved ? 'Yes' : 'No'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-btn" data-id="${design.id}">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteDesign('${design.id}')">Delete</button>
+                    </td>
+                `;
+                designTableBody.appendChild(row);
+            });
+
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const designId = e.target.closest('button').dataset.id;
+                    const design = data.find(d => d.id === designId);
+                    editingDesignId = designId;
+
+                    farmerSearch.value = design.survey_forms.farmer_name;
+                    selectedSurveyId = design.survey_id;
+                    document.getElementById('totalCost').value = design.total_cost;
+                    document.getElementById('govtShare').value = design.govt_share;
+                    document.getElementById('farmerShare').value = design.farmer_share;
+                    isApprovedCheckbox.checked = design.is_approved;
+                    
+                    document.getElementById('initialDesign').dataset.existingUrl = design.initial_des_url || '';
+                    document.getElementById('finalDesign').dataset.existingUrl = design.final_des_url || '';
+
+                    finalDesignContainer.style.display = design.is_approved ? 'block' : 'none';
+                    designForm.style.display = 'block';
+                });
+            });
+        }
+
+        async function deleteDesign(id) {
+            if (confirm('Are you sure you want to delete this design?')) {
+                const { error } = await supabase.from('design').delete().eq('id', id);
+                if (error) {
+                    showToast('Error deleting design: ' + error.message, true);
+                } else {
+                    showToast('Design deleted successfully.');
+                    loadDesigns();
+                }
+            }
+        }
+
+        async function updateDesign(id, designData) {
+            const { error } = await supabase.from('design').update(designData).eq('id', id);
+            if (error) {
+                showToast('Error updating design: ' + error.message, true);
+            } else {
+                showToast('Design updated successfully!');
+                designForm.reset();
+                designForm.style.display = 'none';
+                editingDesignId = null;
+                loadDesigns();
+            }
+        }
+
+        document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+            const filters = {
+                approvalStatus: document.getElementById('approvalStatusFilter').value,
+                startDate: document.getElementById('startDateFilter').value,
+                endDate: document.getElementById('endDateFilter').value,
+            };
+            loadDesigns(filters);
+        });
+
+        document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+            document.getElementById('approvalStatusFilter').value = '';
+            document.getElementById('startDateFilter').value = '';
+            document.getElementById('endDateFilter').value = '';
+            loadDesigns();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFarmers();
+            loadDesigns();
+        });
+    </script>
+</body>
+</html>

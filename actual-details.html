@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Actual Details</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="auth-guard.js" defer></script>
+  <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    :root {
+        --primary-color: #1abc9c; /* Bright Teal */
+        --secondary-color: #95a5a6; /* Cool Silver */
+        --sidebar-bg: #34495e;    /* Wet Asphalt */
+        --body-bg: #ecf0f1;       /* Clouds */
+        --card-bg: #ffffff;
+        --font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            /* Removed display: flex; from body as sidebar is fixed */
+            /* Removed height: 100vh; from body */
+        }
+
+    .sidebar {
+        width: fit-content; /* Adjust width to content */
+        min-width: 260px; /* Ensure a minimum width */
+        background-color: var(--sidebar-bg);
+        color: white;
+        height: 100vh; /* Make it full viewport height */
+        position: fixed; /* Fix its position */
+        top: 0; /* Align to top */
+        left: 0; /* Align to left */
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        /* flex-shrink: 0; is not needed with position: fixed */
+    }
+
+    .sidebar .logo {
+        font-size: 1.6rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .sidebar .subtitle {
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #adb5bd;
+    }
+
+    .sidebar .menu a {
+        white-space: nowrap;
+        color: #dee2e6;
+        text-decoration: none;
+        padding: 12px 15px;
+        display: block;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .sidebar .menu a i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .sidebar .menu a:hover, .sidebar .menu a.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .main-content {
+        margin-left: 260px; /* Offset for the fixed sidebar */
+        padding: 30px;
+        flex-grow: 1; /* Still allow it to grow */
+        width: calc(100% - 260px); /* Ensure it takes remaining width */
+    }
+
+    select, input {
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 6px;
+      border: 1px solid #bdc3c7;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    select:focus, input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: var(--card-bg);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid #ecf0f1;
+      padding: 12px 15px;
+      text-align: left;
+    }
+    th {
+      background-color: #f5f7fa;
+      font-weight: 600;
+    }
+    .btn {
+      padding: 10px 20px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #16a085; /* Darker Teal */
+    }
+    input[readonly] {
+      background-color: #ecf0f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h1 class="logo">SMS Pro</h1>
+    <p class="subtitle">Site Management Suite</p>
+    <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html" class="active"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+  </div>
+
+  <div class="main-content">
+    <h2>Actual Details</h2>
+
+    <label for="siteSelect">Select Site:</label>
+    <select id="siteSelect"></select>
+
+    <button id="toggleViewBtn" class="btn" onclick="toggleView()">Enter Edit Mode</button>
+    <button id="addItemBtn" class="btn" onclick="addRow()" style="display: none;">Add Item</button>
+    <button id="saveChangesBtn" class="btn" onclick="saveChanges()" style="display: none;">Save Changes</button>
+
+    <div class="table-container">
+      <table id="actualTable">
+        <thead>
+          <tr>
+            <th>Item Type</th>
+            <th>Item Category</th>
+            <th>Item Description</th>
+            <th>Standards</th>
+            <th>Specifications</th>
+            <th>Unit</th>
+            <th>Qty</th>
+            <th>Unit Rate (PKR)</th>
+            <th>Cost (PKR)</th>
+            <th>GST Rate (%)</th>
+            <th>GST (PKR)</th>
+            <th>Total (PKR)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="actualTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    // Supabase client initialization
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://mxktarizsqttwwzbqgld.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    // DOM elements
+    const siteSelect = document.getElementById('siteSelect');
+    const actualTableBody = document.getElementById('actualTableBody');
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const saveChangesBtn = document.getElementById('saveChangesBtn');
+
+    let isEditMode = false;
+    let currentActualData = [];
+
+    function toggleView() {
+      isEditMode = !isEditMode;
+      if (isEditMode) {
+        toggleViewBtn.textContent = 'Switch to Read-only';
+        toggleViewBtn.classList.remove('btn-secondary');
+        toggleViewBtn.classList.add('btn-primary');
+        addItemBtn.style.display = 'inline-block';
+        saveChangesBtn.style.display = 'inline-block';
+        renderEditableTable();
+      } else {
+        toggleViewBtn.textContent = 'Enter Edit Mode';
+        toggleViewBtn.classList.remove('btn-primary');
+        toggleViewBtn.classList.add('btn-secondary');
+        addItemBtn.style.display = 'none';
+        saveChangesBtn.style.display = 'none';
+        renderReadOnlyTable();
+      }
+    }
+
+    function renderReadOnlyTable() {
+      actualTableBody.innerHTML = '';
+      currentActualData.forEach(row => addReadOnlyRow(row));
+    }
+
+    function renderEditableTable() {
+      actualTableBody.innerHTML = '';
+      currentActualData.forEach(row => addEditableRow(row));
+    }
+
+    function addReadOnlyRow(row) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row.item_type}</td>
+            <td>${row.item_category}</td>
+            <td>${row.item_description}</td>
+            <td>${row.standards}</td>
+            <td>${row.specifications}</td>
+            <td>${row.unit}</td>
+            <td>${row.qty}</td>
+            <td>${row.unit_rate}</td>
+            <td>${row.cost.toFixed(2)}</td>
+            <td>${row.gst_rate}</td>
+            <td>${row.gst.toFixed(2)}</td>
+            <td>${row.total.toFixed(2)}</td>
+            <td>${row.status}</td>
+        `;
+        actualTableBody.appendChild(tr);
+    }
+
+    // --- Fetch and Populate Sites ---
+    async function fetchSites() {
+      const { data, error } = await supabaseClient
+        .from('site_details')
+        .select('id, site_name');
+
+      if (error) {
+        console.error('Error loading sites:', error);
+        return;
+      }
+
+      siteSelect.innerHTML = '<option value="">-- Select Site --</option>';
+      data.forEach(site => {
+        const option = document.createElement('option');
+        option.value = site.id;
+        option.textContent = site.site_name;
+        siteSelect.appendChild(option);
+      });
+    }
+
+    // --- Event Listener for Site Selection ---
+    siteSelect.addEventListener('change', async () => {
+      actualTableBody.innerHTML = ''; // Clear existing rows
+      const siteId = siteSelect.value;
+      if (!siteId) { // Do nothing if no site is selected
+        currentActualData = [];
+        renderReadOnlyTable();
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('actual_details')
+        .select('*')
+        .eq('site_id', siteId);
+
+      if (error) {
+        console.error('Error fetching Actual details:', error);
+        currentActualData = [];
+        renderReadOnlyTable();
+        return;
+      }
+
+      if (data.length > 0) {
+        currentActualData = data;
+      } else {
+        // If no actual details, fetch from Budget details for 'Material' type
+        const { data: budgetData, error: budgetError } = await supabaseClient
+          .from('budget_details')
+          .select('*')
+          .eq('site_id', siteId)
+          .eq('item_type', 'Material');
+
+        if (budgetError) {
+          console.error('Error fetching Budget details:', budgetError);
+          currentActualData = [];
+          renderReadOnlyTable();
+          return;
+        }
+
+        if (budgetData.length > 0) {
+          alert('No actual details found for this site. Loading "Material" items from budget. Please review and save.');
+          currentActualData = budgetData.map(row => {
+            // Modify the row to fit the actual_details table structure
+            return { ...row, id: null, status: 'Pending' }; 
+          });
+        } else {
+          alert('No actual details or "Material" budget details found for this site.');
+          currentActualData = [];
+        }
+      }
+
+      if (isEditMode) {
+        renderEditableTable();
+      } else {
+        renderReadOnlyTable();
+      }
+    });
+
+    function addRow() {
+        addEditableRow();
+    }
+
+    // --- Add Row Function ---
+    function addEditableRow(row = {}) {
+      const tr = document.createElement('tr');
+      // Use a consistent way to mark new rows. A data attribute is good.
+      tr.setAttribute('data-is-new', row.id ? 'false' : 'true');
+      tr.setAttribute('data-id', row.id || ''); // Store existing ID if available
+
+      const itemTypes = ['Material', 'Service Charges'];
+      const itemCategoryOptions = ['PUMP SET & PRIMER MOVER', 'FILTERATION & FERTIGATION', 'PIPES & FITTINGS', 'EMITTING DEVICES', 'ACCESSORIES', 'MONITORING DEVICES', 'CIVIL WORKS', 'SERVICE CHARGES'];
+      const statusOptions = ['Approved', 'Pending'];
+
+      tr.innerHTML = `
+        <td>
+          <select name="item_type">
+            ${itemTypes.map(t => `<option value="${t}" ${row.item_type === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <select name="item_category">
+            ${itemCategoryOptions.map(c => `<option value="${c}" ${row.item_category === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </td>
+        <td><input type="text" name="item_description" value="${row.item_description || ''}"></td>
+        <td><input type="text" name="standards" value="${row.standards || ''}"></td>
+        <td><input type="text" name="specifications" value="${row.specifications || ''}"></td>
+        <td><input type="text" name="unit" value="${row.unit || ''}"></td>
+        <td><input type="number" name="qty" value="${row.qty || 0}" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="unit_rate" value="${row.unit_rate || 0}" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="cost" value="${row.cost || 0}" readonly></td>
+        <td><input type="number" name="gst_rate" value="${row.gst_rate || 0}" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="gst" value="${row.gst || 0}" readonly></td>
+        <td><input type="number" name="total" value="${row.total || 0}" readonly></td>
+        <td>
+          <select name="status">
+            ${statusOptions.map(s => `<option value="${s}" ${row.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </td>
+      `;
+      actualTableBody.appendChild(tr);
+
+      // Immediately calculate for loaded rows as well
+      calculateRow(tr.querySelector('[name="qty"]'));
+    }
+
+    // --- Calculate Row Values ---
+    function calculateRow(inputElement) {
+      const row = inputElement.closest('tr');
+      const qty = parseFloat(row.querySelector('[name="qty"]').value) || 0;
+      const unitRate = parseFloat(row.querySelector('[name="unit_rate"]').value) || 0;
+      const gstRate = parseFloat(row.querySelector('[name="gst_rate"]').value) || 0;
+
+      const cost = qty * unitRate;
+      const gst = (cost * gstRate) / 100;
+      const total = cost + gst;
+
+      row.querySelector('[name="cost"]').value = cost.toFixed(2);
+      row.querySelector('[name="gst"]').value = gst.toFixed(2);
+      row.querySelector('[name="total"]').value = total.toFixed(2);
+    }
+
+    // --- Save Changes Function ---
+    async function saveChanges() {
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        alert('Please select a site first.');
+        return;
+      }
+
+      const rowsToInsert = [];
+      const rowsToUpdate = [];
+
+      actualTableBody.querySelectorAll('tr').forEach(row => {
+        const record = {
+          site_id: siteId,
+          item_type: row.querySelector('[name="item_type"]').value,
+          item_category: row.querySelector('[name="item_category"]').value,
+          item_description: row.querySelector('[name="item_description"]').value,
+          standards: row.querySelector('[name="standards"]').value,
+          specifications: row.querySelector('[name="specifications"]').value,
+          unit: row.querySelector('[name="unit"]').value,
+          qty: parseFloat(row.querySelector('[name="qty"]').value) || 0,
+          unit_rate: parseFloat(row.querySelector('[name="unit_rate"]').value) || 0,
+          cost: parseFloat(row.querySelector('[name="cost"]').value) || 0,
+          gst_rate: parseFloat(row.querySelector('[name="gst_rate"]').value) || 0,
+          gst: parseFloat(row.querySelector('[name="gst"]').value) || 0,
+          total: parseFloat(row.querySelector('[name="total"]').value) || 0,
+          status: row.querySelector('[name="status"]').value,
+          timestamp: new Date().toISOString()
+        };
+
+        if (row.getAttribute('data-is-new') === 'true') {
+          // For new rows, generate a UUID and add to insert array
+          record.id = crypto.randomUUID();
+          rowsToInsert.push(record);
+        } else {
+          // For existing rows, add ID and to update array
+          record.id = row.getAttribute('data-id');
+          rowsToUpdate.push(record);
+        }
+      });
+
+      let hasError = false;
+
+      // Insert new rows
+      if (rowsToInsert.length > 0) {
+        const { error: insertError } = await supabaseClient.from('actual_details').insert(rowsToInsert);
+        if (insertError) {
+          alert('Error inserting new rows: ' + insertError.message);
+          hasError = true;
+        }
+      }
+
+      // Update existing rows (Supabase upsert can handle this, or individual updates)
+      // For simplicity, let's assume we update one by one or use upsert if all fields are present
+      // A more robust solution might check for changes before updating
+      for (const record of rowsToUpdate) {
+        const { error: updateError } = await supabaseClient
+          .from('actual_details')
+          .update(record)
+          .eq('id', record.id);
+        if (updateError) {
+          alert(`Error updating row ${record.id}: ${updateError.message}`);
+          hasError = true;
+          break; // Stop on first error
+        }
+      }
+
+      if (!hasError) {
+        alert('Changes saved successfully!');
+        // Refresh table to reflect changes (and mark new rows as not new)
+        siteSelect.dispatchEvent(new Event('change'));
+        toggleView();
+      }
+    }
+
+    // --- Initial Data Load ---
+    fetchSites();
+  </script>
+</body>
+</html>

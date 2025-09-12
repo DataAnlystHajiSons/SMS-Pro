@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Details</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="auth-guard.js" defer></script>
+  <style>
+    :root {
+        --primary-color: #1abc9c; /* Bright Teal */
+        --secondary-color: #95a5a6; /* Cool Silver */
+        --sidebar-bg: #34495e;    /* Wet Asphalt */
+        --body-bg: #ecf0f1;       /* Clouds */
+        --card-bg: #ffffff;
+        --font-family: 'Poppins', sans-serif;
+        --border-color: #dee2e6;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--body-bg);
+      margin: 0;
+      padding: 0;
+      color: #333;
+      display: flex;
+    }
+
+    /* Sidebar Styles from admin-dashboard.html */
+    .sidebar {
+        width: fit-content; /* Adjust width to content */
+        min-width: 260px; /* Ensure a minimum width */
+        background-color: var(--sidebar-bg);
+        color: white;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .sidebar .logo {
+        font-size: 1.6rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .sidebar .subtitle {
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #adb5bd;
+    }
+
+    .sidebar .menu a {
+        color: #dee2e6;
+        text-decoration: none;
+        padding: 12px 15px;
+        display: block;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .sidebar .menu a i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .sidebar .menu a:hover, .sidebar .menu a.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+        margin-left: 260px;
+        padding: 30px;
+        width: calc(100% - 260px);
+        min-height: 100vh;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 100%;
+      margin: auto;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 25px;
+    }
+
+    select, input[type="text"], input[type="number"], input[type="date"], .form-control {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid var(--border-color);
+      width: 100%;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    select:focus, input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.25);
+    }
+
+    .table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1800px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 12px 15px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    /* Set specific column widths */
+    th:nth-child(1), td:nth-child(1) { min-width: 50px; } /* Toggle */
+    th:nth-child(2), td:nth-child(2) { min-width: 150px; } /* Item Type */
+    th:nth-child(3), td:nth-child(3) { min-width: 300px; } /* Item Description */
+    th:nth-child(4), td:nth-child(4) { min-width: 150px; } /* Standards */
+    th:nth-child(5), td:nth-child(5) { min-width: 300px; } /* Specifications */
+    th:nth-child(6), td:nth-child(6) { min-width: 100px; } /* Unit */
+    th:nth-child(7), td:nth-child(7) { min-width: 100px; } /* Qty */
+    th:nth-child(8), td:nth-child(8) { min-width: 150px; } /* Unit Rate */
+    th:nth-child(9), td:nth-child(9) { min-width: 150px; } /* Cost */
+    th:nth-child(10), td:nth-child(10) { min-width: 120px; } /* GST Rate */
+    th:nth-child(11), td:nth-child(11) { min-width: 150px; } /* GST */
+    th:nth-child(12), td:nth-child(12) { min-width: 150px; } /* Total */
+    th:nth-child(13), td:nth-child(13) { min-width: 120px; } /* Status */
+    th:nth-child(14), td:nth-child(14) { min-width: 150px; } /* Actions */
+
+    th {
+      background-color: #f5f7fa;
+      color: #333;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tr:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-right: 10px;
+      transition: background-color 0.3s, box-shadow 0.3s;
+      font-size: 1rem;
+      vertical-align: middle;
+    }
+
+    .btn:hover {
+        background-color: #16a085; /* Darker Teal */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+    }
+
+    input[readonly] {
+      background-color: #e9ecef;
+      cursor: not-allowed;
+    }
+
+    /* Filter Pane */
+    #filterPane {
+      display: none;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+
+    .filter-group {
+      margin-bottom: 15px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    tr.sub-item {
+        background-color: #f0f8ff;
+    }
+
+    tr.sub-item td:nth-child(2) { /* Item Type column for sub-items */
+        padding-left: 20px;
+    }
+
+    tr.sub-item td:nth-child(3) { /* Item Description for sub-items */
+        padding-left: 40px;
+    }
+
+    .toggle-sub-items {
+        cursor: pointer;
+        margin-right: 10px;
+        color: var(--primary-color);
+        font-size: 1.2em;
+        transition: color 0.3s;
+    }
+
+    .toggle-sub-items:hover {
+        color: #16a085; /* Darker Teal */
+    }
+
+    .parent-item {
+        font-weight: 500;
+    }
+
+    .parent-item.has-sub-items {
+        background-color: #fff8dc;
+    }
+
+    .sub-item-indicator {
+        color: #6c757d;
+        font-style: italic;
+        margin-left: 20px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+        }
+        
+        .main-content {
+            margin-left: 0;
+            width: 100%;
+            padding: 15px;
+        }
+        
+        body {
+            flex-direction: column;
+        }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar from admin-dashboard.html -->
+  <div class="sidebar">
+    <h1 class="logo">SMS Pro</h1>
+    <p class="subtitle">Site Management Suite</p>
+    <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html" class="active"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <h2>Budget Details</h2>
+      
+      <label for="siteSelect">Select Site:</label>
+      <select id="siteSelect"></select>
+
+      <div style="margin-top: 20px; margin-bottom: 20px;">
+        <input type="text" id="searchBar" placeholder="Search by Item Description..." style="width: 250px; display: inline-block; vertical-align: middle;">
+        <button class="btn" onclick="toggleFilterPane()" style="vertical-align: middle;">Filters</button>
+        <button id="toggleViewBtn" class="btn" onclick="toggleView()" style="vertical-align: middle;">Enter Edit Mode</button>
+        <button id="addItemBtn" class="btn" onclick="addRow()" style="vertical-align: middle; display: none;">Add Item</button>
+        <button id="saveChangesBtn" class="btn" onclick="saveChanges()" style="vertical-align: middle; display: none;">Save Changes</button>
+      </div>
+
+      <div id="filterPane">
+        <div class="row">
+          <div class="col-md-3 filter-group">
+            <label for="itemTypeFilter">Item Type</label>
+            <select id="itemTypeFilter" class="form-control">
+              <option value="">All</option>
+              <option value="Material">Material</option>
+              <option value="Service Charges">Service Charges</option>
+            </select>
+          </div>
+          <div class="col-md-3 filter-group">
+            <label for="standardsFilter">Standards</label>
+            <input type="text" id="standardsFilter" class="form-control">
+          </div>
+          <div class="col-md-3 filter-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" class="form-control">
+          </div>
+          <div class="col-md-3 filter-group">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" class="form-control">
+          </div>
+          <div class="col-md-3 filter-group">
+            <label for="minQty">Min Quantity</label>
+            <input type="number" id="minQty" class="form-control">
+          </div>
+          <div class="col-md-3 filter-group">
+            <label for="maxQty">Max Quantity</label>
+            <input type="number" id="maxQty" class="form-control">
+          </div>
+        </div>
+        <button class="btn" onclick="applyFilters()">Apply Filters</button>
+        <button class="btn" onclick="resetFilters()">Reset Filters</button>
+      </div>
+
+      <div class="table-container">
+        <table id="budgetTable">
+            <thead>
+            <tr>
+                <th></th>
+                <th>Item Type</th>
+                <th>Item Category</th>
+                <th>Item Description</th>
+                <th>Standards</th>
+                <th>Specifications</th>
+                <th>Unit</th>
+                <th>Qty</th>
+                <th>Unit Rate (PKR)</th>
+                <th>Cost (PKR)</th>
+                <th>GST Rate (%)</th>
+                <th>GST (PKR)</th>
+                <th>Total (PKR)</th>
+                <th>Status</th>
+                <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="budgetTableBody"></tbody>
+  </table>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    // Supabase client initialization
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://mxktarizsqttwwzbqgld.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    // DOM elements
+    const siteSelect = document.getElementById('siteSelect');
+    const budgetTableBody = document.getElementById('budgetTableBody');
+    const searchBar = document.getElementById('searchBar');
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const saveChangesBtn = document.getElementById('saveChangesBtn');
+
+    let subItemsToDelete = [];
+    let isEditMode = false;
+    let currentBudgetData = [];
+
+    function toggleView() {
+      isEditMode = !isEditMode;
+      if (isEditMode) {
+        toggleViewBtn.textContent = 'Switch to Read-only';
+        toggleViewBtn.classList.remove('btn-secondary');
+        toggleViewBtn.classList.add('btn-primary');
+        addItemBtn.style.display = 'inline-block';
+        saveChangesBtn.style.display = 'inline-block';
+        renderEditableTable();
+      } else {
+        toggleViewBtn.textContent = 'Enter Edit Mode';
+        toggleViewBtn.classList.remove('btn-primary');
+        toggleViewBtn.classList.add('btn-secondary');
+        addItemBtn.style.display = 'none';
+        saveChangesBtn.style.display = 'none';
+        renderReadOnlyTable();
+      }
+    }
+
+    function renderReadOnlyTable() {
+      budgetTableBody.innerHTML = '';
+      currentBudgetData.forEach(row => addReadOnlyParentRow(row));
+    }
+
+    function renderEditableTable() {
+      budgetTableBody.innerHTML = '';
+      currentBudgetData.forEach(row => addEditableParentRow(row));
+    }
+
+    function addReadOnlyParentRow(row) {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-id', row.id);
+        tr.classList.add('parent-item');
+        if (row.budget_sub_items && row.budget_sub_items.length > 0) {
+            tr.classList.add('has-sub-items');
+        }
+
+        tr.innerHTML = `
+            <td>
+                ${row.budget_sub_items && row.budget_sub_items.length > 0 ? '<i class="fas fa-plus toggle-sub-items"></i>' : ''}
+            </td>
+            <td>${row.item_type}</td>
+            <td>${row.item_category}</td>
+            <td>${row.item_description}</td>
+            <td>${row.standards}</td>
+            <td>${row.specifications}</td>
+            <td>${row.unit}</td>
+            <td>${row.qty}</td>
+            <td>${row.unit_rate}</td>
+            <td>${row.cost.toFixed(2)}</td>
+            <td>${row.gst_rate}</td>
+            <td>${row.gst.toFixed(2)}</td>
+            <td>${row.total.toFixed(2)}</td>
+            <td>${row.status}</td>
+            <td></td>
+        `;
+        budgetTableBody.appendChild(tr);
+
+        if (row.budget_sub_items && row.budget_sub_items.length > 0) {
+            let insertAfter = tr;
+            row.budget_sub_items.forEach(subItem => {
+                const subTr = createReadOnlySubItemRow(subItem, row.id);
+                subTr.style.display = 'none'; // Initially hidden
+                insertAfter.insertAdjacentElement('afterend', subTr);
+                insertAfter = subTr;
+            });
+        }
+    }
+
+    function createReadOnlySubItemRow(subItem, parentId) {
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-id', subItem.id);
+        tr.classList.add('sub-item');
+        tr.setAttribute('data-parent-id', parentId);
+
+        tr.innerHTML = `
+            <td></td>
+            <td><span class="sub-item-indicator">└─ Sub-item</span></td>
+            <td>${subItem.item_description}</td>
+            <td>${subItem.standards}</td>
+            <td>${subItem.specifications}</td>
+            <td>${subItem.unit}</td>
+            <td>${subItem.qty}</td>
+            <td>${subItem.unit_rate}</td>
+            <td>${subItem.cost.toFixed(2)}</td>
+            <td>${subItem.gst_rate}</td>
+            <td>${subItem.gst.toFixed(2)}</td>
+            <td>${subItem.total.toFixed(2)}</td>
+            <td>${subItem.status}</td>
+            <td></td>
+        `;
+        return tr;
+    }
+
+    function toggleFilterPane() {
+      const filterPane = document.getElementById('filterPane');
+      if (filterPane.style.display === 'none' || filterPane.style.display === '') {
+        filterPane.style.display = 'block';
+      } else {
+        filterPane.style.display = 'none';
+      }
+    }
+
+    async function applyFilters() {
+      const siteId = siteSelect.value;
+      if (!siteId) return;
+
+      let query = supabaseClient
+        .from('budget_details')
+        .select('*, budget_sub_items(*)')
+        .eq('site_id', siteId);
+
+      // Search Bar
+      const searchTerm = document.getElementById('searchBar').value;
+      if (searchTerm) {
+        query = query.ilike('item_description', `%${searchTerm}%`);
+      }
+
+      // Item Type Filter
+      const itemType = document.getElementById('itemTypeFilter').value;
+      if (itemType) {
+        query = query.eq('item_type', itemType);
+      }
+
+      // Standards Filter
+      const standards = document.getElementById('standardsFilter').value;
+      if (standards) {
+        query = query.ilike('standards', `%${standards}%`);
+      }
+
+      // Date Range Filter
+      const startDate = document.getElementById('startDate').value;
+      if (startDate) {
+        query = query.gte('timestamp', startDate);
+      }
+      const endDate = document.getElementById('endDate').value;
+      if (endDate) {
+        query = query.lte('timestamp', endDate);
+      }
+
+      // Quantity Filter
+      const minQty = document.getElementById('minQty').value;
+      if (minQty) {
+        query = query.gte('qty', minQty);
+      }
+      const maxQty = document.getElementById('maxQty').value;
+      if (maxQty) {
+        query = query.lte('qty', maxQty);
+      }
+
+      const { data, error } = await query.order('timestamp', { ascending: true });
+
+      if (error) {
+        console.error('Error applying filters:', error);
+        return;
+      }
+
+      currentBudgetData = data;
+      if (isEditMode) {
+        renderEditableTable();
+      } else {
+        renderReadOnlyTable();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('searchBar').value = '';
+      document.getElementById('itemTypeFilter').value = '';
+      document.getElementById('standardsFilter').value = '';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      document.getElementById('minQty').value = '';
+      document.getElementById('maxQty').value = '';
+      siteSelect.dispatchEvent(new Event('change'));
+    }
+
+    searchBar.addEventListener('input', applyFilters);
+
+     // --- Fetch and Populate Sites ---
+    async function fetchSites() {
+      const { data, error } = await supabaseClient
+        .from('site_details')
+        .select('id, site_name');
+
+      if (error) {
+        console.error('Error loading sites:', error);
+        return;
+      }
+
+      siteSelect.innerHTML = '<option value="">-- Select Site --</option>';
+      data.forEach(site => {
+        const option = document.createElement('option');
+        option.value = site.id;
+        option.textContent = site.site_name;
+        siteSelect.appendChild(option);
+      });
+    }
+
+    // --- Event Listener for Site Selection ---
+    siteSelect.addEventListener('change', async () => {
+      budgetTableBody.innerHTML = '';
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        currentBudgetData = [];
+        renderReadOnlyTable();
+        return;
+      }
+
+      // Fetch parent budget items and their sub-items
+      const { data: budgetData, error: budgetError } = await supabaseClient
+        .from('budget_details')
+        .select('*, budget_sub_items(*)')
+        .eq('site_id', siteId)
+        .order('timestamp', { ascending: true });
+
+      if (budgetError) {
+        console.error('Error fetching Budget details:', budgetError);
+        currentBudgetData = [];
+        renderReadOnlyTable();
+        return;
+      }
+
+      if (budgetData.length > 0) {
+        currentBudgetData = budgetData;
+      } else {
+        // If no budget details, fetch from BOQ and populate
+        const { data: boqData, error: boqError } = await supabaseClient
+          .from('boq_details')
+          .select('*')
+          .eq('site_id', siteId);
+
+        if (boqError) {
+          console.error('Error fetching BOQ details for budget creation:', boqError);
+          currentBudgetData = [];
+          renderReadOnlyTable();
+          return;
+        }
+
+        if (boqData.length > 0) {
+          alert('No budget details found for this site. Loading from BOQ details. Please review and save.');
+          currentBudgetData = boqData.map(boqRow => ({
+            ...boqRow,
+            id: undefined,
+            budget_id: crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            budget_sub_items: []
+          }));
+        } else {
+          alert('No budget or BOQ details found for this site.');
+          currentBudgetData = [];
+        }
+      }
+
+      if (isEditMode) {
+        renderEditableTable();
+      } else {
+        renderReadOnlyTable();
+      }
+    });
+
+    // --- Add Parent Row Function ---
+    function addEditableParentRow(row = {}) {
+      const tr = document.createElement('tr');
+      const rowId = row.id || crypto.randomUUID();
+      tr.setAttribute('data-id', rowId);
+      tr.setAttribute('data-is-new', row.id ? 'false' : 'true');
+      tr.classList.add('parent-item');
+      
+      if (row.budget_sub_items && row.budget_sub_items.length > 0) {
+        tr.classList.add('has-sub-items');
+      }
+
+      const itemTypes = ['Material', 'Service Charges'];
+      const itemCategoryOptions = ['PUMP SET & PRIMER MOVER', 'FILTERATION & FERTIGATION', 'PIPES & FITTINGS', 'EMITTING DEVICES', 'ACCESSORIES', 'MONITORING DEVICES', 'CIVIL WORKS', 'SERVICE CHARGES'];
+      const statusOptions = ['Approved', 'Pending'];
+
+      tr.innerHTML = `
+        <td>
+          <i class="fas fa-plus toggle-sub-items" style="display: none;"></i>
+        </td>
+        <td>
+          <select name="item_type">
+            ${itemTypes.map(t => `<option value="${t}" ${row.item_type === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <select name="item_category">
+            ${itemCategoryOptions.map(c => `<option value="${c}" ${row.item_category === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </td>
+        <td><input type="text" name="item_description" value="${row.item_description || ''}"></td>
+        <td><input type="text" name="standards" value="${row.standards || ''}"></td>
+        <td><input type="text" name="specifications" value="${row.specifications || ''}"></td>
+        <td><input type="text" name="unit" value="${row.unit || ''}"></td>
+        <td><input type="number" name="qty" value="${row.qty || 0}" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="unit_rate" value="${row.unit_rate || 0}" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="cost" value="${row.cost || 0}" step="0.01" readonly></td>
+        <td><input type="number" name="gst_rate" value="${row.gst_rate || 0}" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="gst" value="${row.gst || 0}" step="0.01" readonly></td>
+        <td><input type="number" name="total" value="${row.total || 0}" step="0.01" readonly></td>
+        <td>
+          <select name="status">
+            ${statusOptions.map(s => `<option value="${s}" ${row.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-sm" onclick="addSubItemRow('${rowId}')">Add Sub</button>
+        </td>
+      `;
+      
+      budgetTableBody.appendChild(tr);
+
+      // Add existing sub-items right after the parent
+      if (row.budget_sub_items && row.budget_sub_items.length > 0) {
+        let insertAfter = tr;
+        row.budget_sub_items.forEach(subItem => {
+          const subTr = createEditableSubItemRow(subItem, rowId);
+          insertAfter.insertAdjacentElement('afterend', subTr);
+          insertAfter = subTr;
+        });
+        updateToggleVisibility(rowId);
+      }
+
+      // Calculate initial values
+      calculateRow(tr.querySelector('[name="qty"]'));
+      
+      // Update parent total to include existing sub-items
+      const currentParentId = tr.getAttribute('data-id');
+      if (row.budget_sub_items && row.budget_sub_items.length > 0) {
+        setTimeout(() => {
+          updateParentTotal(currentParentId);
+        }, 10);
+      }
+    }
+
+    // --- Create Sub-item Row ---
+    function createEditableSubItemRow(subItem, parentId) {
+      const tr = document.createElement('tr');
+      const rowId = subItem.id || crypto.randomUUID();
+      tr.setAttribute('data-id', rowId);
+      tr.setAttribute('data-is-new', subItem.id ? 'false' : 'true');
+      tr.classList.add('sub-item');
+      tr.setAttribute('data-parent-id', parentId);
+
+      const statusOptions = ['Approved', 'Pending'];
+
+      tr.innerHTML = `
+        <td></td>
+        <td>
+          <span class="sub-item-indicator">└─ Sub-item</span>
+        </td>
+        <td><input type="text" name="item_description" value="${subItem.item_description || ''}"></td>
+        <td><input type="text" name="standards" value="${subItem.standards || ''}"></td>
+        <td><input type="text" name="specifications" value="${subItem.specifications || ''}"></td>
+        <td><input type="text" name="unit" value="${subItem.unit || ''}"></td>
+        <td><input type="number" name="qty" value="${subItem.qty || 0}" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="unit_rate" value="${subItem.unit_rate || 0}" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="cost" value="${subItem.cost || 0}" step="0.01" readonly></td>
+        <td><input type="number" name="gst_rate" value="${subItem.gst_rate || 0}" step="0.01" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="gst" value="${subItem.gst || 0}" step="0.01" readonly></td>
+        <td><input type="number" name="total" value="${subItem.total || 0}" step="0.01" readonly></td>
+        <td>
+          <select name="status">
+            ${statusOptions.map(s => `<option value="${s}" ${subItem.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-sm" style="background-color: #dc3545;" onclick="removeSubItemRow('${rowId}')">Remove</button>
+        </td>
+      `;
+
+      // Calculate initial values
+      calculateRow(tr.querySelector('[name="qty"]'));
+      
+      // Trigger parent total update after initial calculation
+      setTimeout(() => {
+        updateParentTotal(parentId);
+      }, 10);
+      
+      return tr;
+    }
+
+    // --- Add New Row (for main Add Item button) ---
+    function addRow() {
+      addEditableParentRow();
+    }
+
+    // --- Add Sub-item Row ---
+    function addSubItemRow(parentId) {
+      const parentRow = document.querySelector(`tr.parent-item[data-id='${parentId}']`);
+      if (!parentRow) return;
+
+      const subItemData = {
+        budget_detail_id: parentId,
+        id: crypto.randomUUID()
+      };
+      
+      // Find the last sub-item of this parent, or use parent if no sub-items exist
+      let insertAfter = parentRow;
+      const existingSubItems = document.querySelectorAll(`tr.sub-item[data-parent-id='${parentId}']`);
+      if (existingSubItems.length > 0) {
+        insertAfter = existingSubItems[existingSubItems.length - 1];
+      }
+
+      // Create and insert the new sub-item
+      const subTr = createEditableSubItemRow(subItemData, parentId);
+      insertAfter.insertAdjacentElement('afterend', subTr);
+
+      // Update parent styling and toggle visibility
+      parentRow.classList.add('has-sub-items');
+      updateToggleVisibility(parentId);
+      
+      // Make sure sub-items are visible
+      showSubItems(parentId);
+      
+      // Update parent total (force update after DOM insertion)
+      setTimeout(() => {
+        updateParentTotal(parentId);
+      }, 10);
+    }
+
+    // --- Remove Sub-item Row ---
+    function removeSubItemRow(subItemId) {
+      const subItemRow = document.querySelector(`tr.sub-item[data-id='${subItemId}']`);
+      if (!subItemRow) return;
+
+      const parentId = subItemRow.getAttribute('data-parent-id');
+      if (subItemRow.getAttribute('data-is-new') === 'false') {
+        subItemsToDelete.push(subItemId);
+      }
+      subItemRow.remove();
+
+      // Check if there are still sub-items for this parent
+      const remainingSubItems = document.querySelectorAll(`tr.sub-item[data-parent-id='${parentId}']`);
+      const parentRow = document.querySelector(`tr.parent-item[data-id='${parentId}']`);
+      
+      if (remainingSubItems.length === 0) {
+        if (parentRow) {
+          parentRow.classList.remove('has-sub-items');
+          const toggleIcon = parentRow.querySelector('.toggle-sub-items');
+          if (toggleIcon) {
+            toggleIcon.style.display = 'none';
+          }
+        }
+      }
+
+      // Update parent total
+      updateParentTotal(parentId);
+    }
+
+    // --- Update Toggle Visibility ---
+    function updateToggleVisibility(parentId) {
+      const parentRow = document.querySelector(`tr.parent-item[data-id='${parentId}']`);
+      if (!parentRow) return;
+
+      const subItems = document.querySelectorAll(`tr.sub-item[data-parent-id='${parentId}']`);
+      const toggleIcon = parentRow.querySelector('.toggle-sub-items');
+      
+      if (toggleIcon) {
+        if (subItems.length > 0) {
+          toggleIcon.style.display = 'inline';
+          toggleIcon.classList.remove('fa-plus');
+          toggleIcon.classList.add('fa-minus');
+        } else {
+          toggleIcon.style.display = 'none';
+        }
+      }
+    }
+
+    // --- Show/Hide Sub-items ---
+    function showSubItems(parentId) {
+      const subItems = document.querySelectorAll(`tr.sub-item[data-parent-id='${parentId}']`);
+      const parentRow = document.querySelector(`tr.parent-item[data-id='${parentId}']`);
+      const toggleIcon = parentRow ? parentRow.querySelector('.toggle-sub-items') : null;
+      
+      subItems.forEach(subItem => {
+        subItem.style.display = 'table-row';
+      });
+      
+      if (toggleIcon) {
+        toggleIcon.classList.remove('fa-plus');
+        toggleIcon.classList.add('fa-minus');
+      }
+    }
+
+    function hideSubItems(parentId) {
+      const subItems = document.querySelectorAll(`tr.sub-item[data-parent-id='${parentId}']`);
+      const parentRow = document.querySelector(`tr.parent-item[data-id='${parentId}']`);
+      const toggleIcon = parentRow ? parentRow.querySelector('.toggle-sub-items') : null;
+      
+      subItems.forEach(subItem => {
+        subItem.style.display = 'none';
+      });
+      
+      if (toggleIcon) {
+        toggleIcon.classList.remove('fa-minus');
+        toggleIcon.classList.add('fa-plus');
+      }
+    }
+
+    // --- Event listener for toggle functionality ---
+    document.getElementById('budgetTableBody').addEventListener('click', function(e) {
+      if (e.target && e.target.classList.contains('toggle-sub-items')) {
+        const icon = e.target;
+        const parentRow = icon.closest('tr');
+        const parentId = parentRow.getAttribute('data-id');
+        
+        const isCollapsed = icon.classList.contains('fa-plus');
+        
+        if (isCollapsed) {
+          showSubItems(parentId);
+        } else {
+          hideSubItems(parentId);
+        }
+      }
+    });
+
+    // --- Calculate Row Values ---
+    function calculateRow(inputElement) {
+      const row = inputElement.closest('tr');
+      const qty = parseFloat(row.querySelector('[name="qty"]').value) || 0;
+      const unitRate = parseFloat(row.querySelector('[name="unit_rate"]').value) || 0;
+      const gstRate = parseFloat(row.querySelector('[name="gst_rate"]').value) || 0;
+
+      const cost = qty * unitRate;
+      const gst = (cost * gstRate) / 100;
+      const total = cost + gst;
+
+      row.querySelector('[name="cost"]').value = cost.toFixed(2);
+      row.querySelector('[name="gst"]').value = gst.toFixed(2);
+      row.querySelector('[name="total"]').value = total.toFixed(2);
+
+      // If this is a sub-item, update the parent total
+      const parentId = row.getAttribute('data-parent-id');
+      if (parentId) {
+        updateParentTotal(parentId);
+      }
+      
+      // If this is a parent item, also update its total (to include sub-items)
+      if (row.classList.contains('parent-item')) {
+        const currentParentId = row.getAttribute('data-id');
+        updateParentTotal(currentParentId);
+      }
+    }
+
+    // --- Update Parent Total ---
+    function updateParentTotal(parentId) {
+      const parentRow = document.querySelector(`tr.parent-item[data-id='${parentId}']`);
+      if (!parentRow) return;
+
+      const subItems = document.querySelectorAll(`tr.sub-item[data-parent-id='${parentId}']`);
+      
+      let totalCost = 0;
+      let totalGst = 0;
+      let grandTotal = 0;
+
+      const qtyInput = parentRow.querySelector('[name="qty"]');
+      const unitRateInput = parentRow.querySelector('[name="unit_rate"]');
+      const gstRateInput = parentRow.querySelector('[name="gst_rate"]');
+
+      if (subItems.length > 0) {
+        // If there are sub-items, sum their values and overwrite the parent's.
+        subItems.forEach(subItem => {
+          totalCost += parseFloat(subItem.querySelector('[name="cost"]').value) || 0;
+          totalGst += parseFloat(subItem.querySelector('[name="gst"]').value) || 0;
+          grandTotal += parseFloat(subItem.querySelector('[name="total"]').value) || 0;
+        });
+        
+        // Make parent inputs readonly and visually disabled
+        qtyInput.setAttribute('readonly', true);
+        unitRateInput.setAttribute('readonly', true);
+        gstRateInput.setAttribute('readonly', true);
+
+      } else {
+        // If no sub-items, calculate from the parent's own values
+        const parentQty = parseFloat(qtyInput.value) || 0;
+        const parentUnitRate = parseFloat(unitRateInput.value) || 0;
+        const parentGstRate = parseFloat(gstRateInput.value) || 0;
+
+        totalCost = parentQty * parentUnitRate;
+        totalGst = (totalCost * parentGstRate) / 100;
+        grandTotal = totalCost + totalGst;
+
+        // Make parent inputs editable again
+        qtyInput.removeAttribute('readonly');
+        unitRateInput.removeAttribute('readonly');
+        gstRateInput.removeAttribute('readonly');
+      }
+
+      // Update parent row display values
+      parentRow.querySelector('[name="cost"]').value = totalCost.toFixed(2);
+      parentRow.querySelector('[name="gst"]').value = totalGst.toFixed(2);
+      parentRow.querySelector('[name="total"]').value = grandTotal.toFixed(2);
+
+      console.log(`Parent ${parentId}: Grand Total (overwrite logic) = ${grandTotal.toFixed(2)}`);
+    }
+
+    // --- Save Changes Function ---
+    async function saveChanges() {
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        alert('Please select a site first.');
+        return;
+      }
+
+      const rowsToUpsert = [];
+      const subItemsToUpsert = [];
+
+      budgetTableBody.querySelectorAll('tr.parent-item').forEach(row => {
+        const rowId = row.getAttribute('data-id');
+        const record = {
+          site_id: siteId,
+          item_type: row.querySelector('[name="item_type"]').value,
+          item_category: row.querySelector('[name="item_category"]').value,
+          item_description: row.querySelector('[name="item_description"]').value,
+          standards: row.querySelector('[name="standards"]').value,
+          specifications: row.querySelector('[name="specifications"]').value,
+          unit: row.querySelector('[name="unit"]').value,
+          qty: parseFloat(row.querySelector('[name="qty"]').value) || 0,
+          unit_rate: parseFloat(row.querySelector('[name="unit_rate"]').value) || 0,
+          cost: parseFloat(row.querySelector('[name="cost"]').value) || 0,
+          gst_rate: parseFloat(row.querySelector('[name="gst_rate"]').value) || 0,
+          gst: parseFloat(row.querySelector('[name="gst"]').value) || 0,
+          total: parseFloat(row.querySelector('[name="total"]').value) || 0,
+          status: row.querySelector('[name="status"]').value,
+          timestamp: new Date().toISOString()
+        };
+        if (row.getAttribute('data-is-new') === 'false') {
+            record.id = rowId;
+        }
+        rowsToUpsert.push(record);
+      });
+
+      budgetTableBody.querySelectorAll('tr.sub-item').forEach(row => {
+          const parentId = row.getAttribute('data-parent-id');
+          const rowId = row.getAttribute('data-id');
+          const record = {
+              budget_detail_id: parentId,
+              site_id: siteId,
+              item_description: row.querySelector('[name="item_description"]').value,
+              standards: row.querySelector('[name="standards"]').value,
+              specifications: row.querySelector('[name="specifications"]').value,
+              unit: row.querySelector('[name="unit"]').value,
+              qty: parseFloat(row.querySelector('[name="qty"]').value) || 0,
+              unit_rate: parseFloat(row.querySelector('[name="unit_rate"]').value) || 0,
+              cost: parseFloat(row.querySelector('[name="cost"]').value) || 0,
+              gst_rate: parseFloat(row.querySelector('[name="gst_rate"]').value) || 0,
+              gst: parseFloat(row.querySelector('[name="gst"]').value) || 0,
+              total: parseFloat(row.querySelector('[name="total"]').value) || 0,
+              timestamp: new Date().toISOString()
+          };
+          if (row.getAttribute('data-is-new') === 'false') {
+            record.id = rowId;
+          }
+          subItemsToUpsert.push(record);
+      });
+
+      let hasError = false;
+
+      if (rowsToUpsert.length > 0) {
+        const { error } = await supabaseClient.from('budget_details').upsert(rowsToUpsert, { onConflict: 'id' });
+        if (error) {
+          console.error('Error saving parent items:', error);
+          alert('Error saving parent items: ' + error.message);
+          hasError = true;
+        }
+      }
+
+      if (subItemsToUpsert.length > 0) {
+        const { error } = await supabaseClient.from('budget_sub_items').upsert(subItemsToUpsert, { onConflict: 'id' });
+        if (error) {
+          console.error('Error saving sub-items:', error);
+          alert('Error saving sub-items: ' + error.message);
+          hasError = true;
+        }
+      }
+
+      if (!hasError) {
+        if (subItemsToDelete.length > 0) {
+          const { error } = await supabaseClient.from('budget_sub_items').delete().in('id', subItemsToDelete);
+          if (error) {
+            console.error('Error deleting sub-items:', error);
+            alert('Error deleting sub-items: ' + error.message);
+            hasError = true;
+          } else {
+            subItemsToDelete = []; // Clear the array after successful deletion
+          }
+        }
+      }
+
+      if (!hasError) {
+        alert('Changes saved successfully!');
+        siteSelect.dispatchEvent(new Event('change'));
+        toggleView(); // Switch back to read-only view
+      } else {
+        alert('Some changes could not be saved. Please check the console for errors.');
+      }
+    }
+
+    // --- Initial Data Load ---
+    fetchSites();
+  </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Payment Details - HS Priat Software</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="auth-guard.js" defer></script>
+
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            gap: 1rem;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Make sidebar scrollable */
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            white-space: nowrap; /* Prevent text wrapping */
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            flex-grow: 1; /* Allow main content to take remaining space */
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* --- Button Overrides --- */
+        .btn-primary,
+        .btn-primary:focus {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085; /* Darker Teal */
+            border-color: #16a085;
+        }
+
+        .btn-info,
+        .btn-info:focus {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .btn-info:hover {
+            background-color: #7f8c8d; /* Darker Silver */
+            border-color: #7f8c8d;
+            color: #fff;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .header .controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="main-sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html" class="active"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Payment Details</h1>
+            <div class="controls">
+                <div id="siteSelectContainer">
+                    <!-- Site dropdown will be appended here by JS -->
+                </div>
+                <button id="addPaymentBtn" class="btn btn-primary">Add Payment</button>
+                <button id="toggleFilterBtn" class="btn btn-secondary">Filters</button>
+                <button id="paymentHistoryBtn" class="btn btn-info">Payment History</button>
+            </div>
+        </div>
+
+        <div id="siteExtraDetails" class="card mb-4" style="display: none;">
+            <div class="card-body">
+                <!-- Supervisor, Scheme Type, District will be shown here -->
+            </div>
+        </div>
+
+        <div id="filterPane" class="card mb-4" style="display: none;">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="supervisorFilter" class="form-label">Site Supervisor</label>
+                        <select id="supervisorFilter" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="startDateFilter" class="form-label">Start Date</label>
+                        <input type="date" id="startDateFilter" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="endDateFilter" class="form-label">End Date</label>
+                        <input type="date" id="endDateFilter" class="form-control">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button id="applyFiltersBtn" class="btn btn-primary me-2">Apply Filters</button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Entry Form -->
+        <div class="card mt-4" id="paymentFormCard" style="display: none;">
+            <div class="card-header">
+                Enter New Payment
+            </div>
+            <div class="card-body">
+                <form id="paymentEntryForm">
+                    <div class="mb-3">
+                        <label for="paymentDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="paymentDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentAmount" class="form-label">Amount</label>
+                        <input type="number" class="form-control" id="paymentAmount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentRemarks" class="form-label">Remarks</label>
+                        <textarea class="form-control" id="paymentRemarks" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Payment</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4" id="chartCard" style="display: none;">
+            <div class="card-header">
+                Payment Trend
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height:40vh; width:100%">
+                    <canvas id="paymentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="paymentDetailsContent" class="mt-4">
+            <p>Please select a site to view payment details.</p>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        // --- Security Check ---
+        async function checkAuthAndRedirect() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                const { data: userMeta, error: metaError } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (metaError || !userMeta || (userMeta.role !== 'Admin' && userMeta.role !== 'Manager')) {
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        // Call the security check immediately
+        checkAuthAndRedirect();
+
+        // DOM elements
+        const siteSelect = document.createElement('select'); // Create select element
+        siteSelect.id = 'siteSelect';
+        siteSelect.className = 'form-select'; // Add Bootstrap class
+        siteSelect.style.width = '200px'; // Basic styling
+        document.getElementById('siteSelectContainer').appendChild(siteSelect);
+
+        const paymentDetailsContent = document.getElementById('paymentDetailsContent');
+        const siteExtraDetails = document.getElementById('siteExtraDetails');
+        const paymentFormCard = document.getElementById('paymentFormCard');
+        const paymentEntryForm = document.getElementById('paymentEntryForm');
+        const addPaymentBtn = document.getElementById('addPaymentBtn');
+        const paymentDateInput = document.getElementById('paymentDate');
+        const paymentAmountInput = document.getElementById('paymentAmount');
+        const paymentRemarksInput = document.getElementById('paymentRemarks');
+        const submitButton = document.querySelector('#paymentEntryForm button[type="submit"]');
+
+        let editingRecordId = null;
+
+        // Filter DOM elements
+        const toggleFilterBtn = document.getElementById('toggleFilterBtn');
+        const filterPane = document.getElementById('filterPane');
+        const supervisorFilter = document.getElementById('supervisorFilter');
+        const startDateFilter = document.getElementById('startDateFilter');
+        const endDateFilter = document.getElementById('endDateFilter');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+        // Chart elements
+        const chartCard = document.getElementById('chartCard');
+        const paymentChartCanvas = document.getElementById('paymentChart');
+        let paymentChart = null;
+
+        // --- Chart Rendering --- 
+        function renderPaymentChart(paymentData) {
+            if (paymentChart) {
+                paymentChart.destroy();
+            }
+
+            if (!paymentData || paymentData.length < 2) {
+                chartCard.style.display = 'none';
+                return;
+            }
+            chartCard.style.display = 'block';
+
+            const sortedData = paymentData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = sortedData.map(p => p.date);
+            const amounts = sortedData.map(p => p.amount);
+
+            const ctx = paymentChartCanvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(26, 188, 156, 0.6)');
+            gradient.addColorStop(1, 'rgba(26, 188, 156, 0.05)');
+
+            paymentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Payment Amount',
+                        data: amounts,
+                        backgroundColor: gradient,
+                        borderColor: '#1abc9c',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#1abc9c',
+                        pointHoverRadius: 7,
+                        pointHoverBorderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: value => 'PKR ' + value.toLocaleString() }
+                        },
+                        x: {
+                            ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#34495e',
+                            titleFont: { size: 16 },
+                            bodyFont: { size: 14 },
+                            padding: 12,
+                            cornerRadius: 6,
+                            displayColors: false,
+                            callbacks: {
+                                label: context => `Amount: PKR ${context.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Fetch and Populate Sites ---
+        async function fetchSites() {
+            const { data, error } = await supabase.from('site_details').select('id, site_name');
+            if (error) {
+                console.error('Error loading sites:', error);
+                return;
+            }
+            siteSelect.innerHTML = '<option value="">-- Select Site --</option>';
+            data.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site.id;
+                option.textContent = site.site_name;
+                siteSelect.appendChild(option);
+            });
+        }
+
+        // --- Populate Supervisor Filter ---
+        async function populateSupervisorFilter() {
+            const { data, error } = await supabase.from('site_details').select('site_supervisor');
+            if (error) {
+                console.error('Error loading supervisors:', error);
+                return;
+            }
+            const supervisors = [...new Set(data.map(s => s.site_supervisor).filter(Boolean))];
+            supervisorFilter.innerHTML = '<option value="">All Supervisors</option>';
+            supervisors.forEach(supervisor => {
+                const option = document.createElement('option');
+                option.value = supervisor;
+                option.textContent = supervisor;
+                supervisorFilter.appendChild(option);
+            });
+        }
+
+        // --- Load Payment Details ---
+        async function loadPaymentDetails(siteId, supervisor = null, startDate = null, endDate = null) {
+            paymentDetailsContent.innerHTML = `<p>Loading payment details for Site ID: ${siteId}...</p>`;
+
+            let query = supabase.from('payment_details').select('id, date, amount, remarks').eq('site_id', siteId).order('date', { ascending: false });
+
+            if (supervisor) {
+                const { data: sitesBySupervisor, error: supervisorError } = await supabase.from('site_details').select('id').eq('site_supervisor', supervisor);
+                if (supervisorError) {
+                    console.error('Error fetching sites by supervisor:', supervisorError);
+                    return;
+                }
+                const siteIdsForSupervisor = sitesBySupervisor.map(s => s.id);
+                query = query.in('site_id', siteIdsForSupervisor);
+            }
+
+            if (startDate) query = query.gte('date', startDate);
+            if (endDate) query = query.lte('date', endDate);
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error('Error fetching payment details:', error);
+                paymentDetailsContent.innerHTML = '<p>Error loading payment details.</p>';
+                renderPaymentChart(null); // Clear chart on error
+                return;
+            }
+
+            renderPaymentChart(data); // Render chart with fetched data
+
+            if (data.length > 0) {
+                let rows = data.map(payment => `
+                    <tr>
+                        <td>${payment.date || 'N/A'}</td>
+                        <td>${payment.amount || 'N/A'}</td>
+                        <td>${payment.remarks || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info edit-btn" data-id="${payment.id}" data-date="${payment.date}" data-amount="${payment.amount}" data-remarks="${payment.remarks || ''}">Edit</button>
+                        </td>
+                    </tr>`).join('');
+
+                paymentDetailsContent.innerHTML = `
+                    <h3>Payment Records:</h3>
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Remarks</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            } else {
+                paymentDetailsContent.innerHTML = '<p>No payment details found for this site.</p>';
+            }
+
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', handleEditClick);
+            });
+        }
+
+        // --- Event Handlers ---
+        function handleEditClick(event) {
+            const button = event.target;
+            editingRecordId = button.dataset.id;
+            
+            paymentFormCard.style.display = 'block';
+            paymentDateInput.value = button.dataset.date;
+            paymentAmountInput.value = button.dataset.amount;
+            paymentRemarksInput.value = button.dataset.remarks;
+
+            submitButton.textContent = 'Update Payment';
+            submitButton.classList.remove('btn-primary');
+            submitButton.classList.add('btn-success');
+
+            paymentFormCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function handlePaymentSubmit(event) {
+            event.preventDefault();
+            const siteId = siteSelect.value;
+            if (!siteId) {
+                alert('Please select a site first.');
+                return;
+            }
+
+            const paymentData = {
+                date: paymentDateInput.value,
+                amount: parseFloat(paymentAmountInput.value),
+                remarks: paymentRemarksInput.value,
+            };
+
+            let result;
+            if (editingRecordId) {
+                result = await supabase.from('payment_details').update(paymentData).eq('id', editingRecordId);
+            } else {
+                paymentData.site_id = siteId;
+                result = await supabase.from('payment_details').insert([paymentData]);
+            }
+
+            if (result.error) {
+                console.error('Error saving payment:', result.error);
+                alert('Failed to save payment: ' + result.error.message);
+            } else {
+                alert('Payment saved successfully!');
+                resetForm();
+                paymentFormCard.style.display = 'none';
+                loadPaymentDetails(siteId);
+            }
+        }
+
+        function resetForm() {
+            paymentEntryForm.reset();
+            submitButton.textContent = 'Add Payment';
+            submitButton.classList.remove('btn-success');
+            submitButton.classList.add('btn-primary');
+            editingRecordId = null;
+        }
+
+        // --- Initial Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchSites();
+            populateSupervisorFilter();
+
+            toggleFilterBtn.addEventListener('click', () => {
+                filterPane.style.display = filterPane.style.display === 'none' ? 'block' : 'none';
+            });
+
+            applyFiltersBtn.addEventListener('click', () => {
+                const siteId = siteSelect.value;
+                if (!siteId) {
+                    alert('Please select a site first.');
+                    return;
+                }
+                loadPaymentDetails(siteId, supervisorFilter.value, startDateFilter.value, endDateFilter.value);
+            });
+
+            resetFiltersBtn.addEventListener('click', () => {
+                supervisorFilter.value = '';
+                startDateFilter.value = '';
+                endDateFilter.value = '';
+                if (siteSelect.value) {
+                    loadPaymentDetails(siteSelect.value);
+                }
+            });
+
+            siteSelect.addEventListener('change', async () => {
+                const siteId = siteSelect.value;
+                resetForm();
+                paymentFormCard.style.display = 'none';
+                siteExtraDetails.style.display = 'none';
+                if (paymentChart) paymentChart.destroy();
+                chartCard.style.display = 'none';
+
+                if (!siteId) {
+                    paymentDetailsContent.innerHTML = '<p>Please select a site to view payment details.</p>';
+                    return;
+                }
+
+                const { data: siteDetails } = await supabase.from('site_details').select('site_supervisor, scheme_type, district').eq('id', siteId).single();
+                const { data: totalPaymentData } = await supabase.from('payment_details').select('amount').eq('site_id', siteId);
+
+                let totalPaymentAmount = totalPaymentData ? totalPaymentData.reduce((sum, row) => sum + parseFloat(row.amount || 0), 0) : 0;
+
+                if (siteDetails) {
+                    siteExtraDetails.querySelector('.card-body').innerHTML = `
+                        <span class="me-3"><strong>Supervisor:</strong> ${siteDetails.site_supervisor || 'N/A'}</span>
+                        <span class="me-3"><strong>Scheme Type:</strong> ${siteDetails.scheme_type || 'N/A'}</span>
+                        <span><strong>District:</strong> ${siteDetails.district || 'N/A'}</span>
+                        <span class="ms-3"><strong>Total Payments:</strong> PKR ${totalPaymentAmount.toFixed(2)}</span>
+                    `;
+                    siteExtraDetails.style.display = 'block';
+                }
+
+                loadPaymentDetails(siteId);
+            });
+
+            addPaymentBtn.addEventListener('click', () => {
+                if (!siteSelect.value) {
+                    alert('Please select a site before adding a payment.');
+                    return;
+                }
+                resetForm();
+                paymentFormCard.style.display = 'block';
+            });
+
+            paymentEntryForm.addEventListener('submit', handlePaymentSubmit);
+
+            document.getElementById('paymentHistoryBtn').addEventListener('click', () => {
+                window.location.href = 'payment-history.html';
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRIAT Invoices</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            display: flex;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            width: calc(100% - 260px);
+        }
+
+        .invoice-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+
+        #invoice-display {
+            max-width: 1000px;
+        }
+
+        #annexture-display {
+            max-width: 1200px;
+        }
+
+        #annexture-b-display {
+            max-width: 1400px;
+        }
+
+        #annexture-a-ii-display {
+            max-width: 1600px;
+        }
+
+        .invoice-details table, .invoice-table table, .annexture-table, .annexture-cost-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .invoice-details td, .invoice-table td, .invoice-table th, .annexture-table td, .annexture-cost-table td, .annexture-cost-table th {
+            padding: 5px 8px;
+            border: 1px solid #000;
+            vertical-align: top;
+        }
+
+        .invoice-details .label {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            width: 15%;
+        }
+
+        .invoice-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .total-row {
+            font-weight: bold;
+        }
+        
+        .certification {
+            margin: 20px 0;
+            font-size: 11px;
+            text-align: justify;
+            border: 1px solid #000;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .signatures {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 40%;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin: 40px auto 5px;
+            width: 40%;
+        }
+
+        .annexture-table td, .annexture-cost-table td, .annexture-cost-table th {
+            padding: 2px 5px;
+            border: 1px solid #000;
+            vertical-align: top;
+        }
+
+        .annexture-table b {
+            font-weight: bold;
+        }
+
+        .annexture-signatures {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .annexture-signatures .stamp-box {
+            border: 1px solid #000;
+            height: 50px;
+            margin-top: 5px;
+            padding: 5px;
+            text-align: left;
+            font-size: 11px;
+            color: #555;
+        }
+
+        .annexture-footer {
+            font-size: 12px;
+        }
+
+        .annexture-footer ol {
+            padding-left: 20px;
+        }
+
+        .annexture-footer .signature-line {
+             border-bottom: 1px solid #000;
+             margin: 20px 0 5px 0;
+        }
+
+        .digit-box {
+            border: 1px solid #000;
+            padding: 2px 4px;
+            margin: 0 1px;
+            display: inline-block;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        #annexture-b-display, #annexture-b-display table {
+            font-size: 10px;
+        }
+
+        #annexture-b-display .invoice-details, #annexture-b-display .invoice-table, #annexture-a-ii-display .invoice-details  {
+            width: 100%;
+        }
+
+        #annexture-a-ii-display, #annexture-a-ii-display table {
+            font-size: 9px;
+        }
+        #annexture-a-ii-display .invoice-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 30mm 5mm 9mm 5mm;
+            }
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .sidebar, .d-flex.justify-content-between.align-items-center.mb-4 {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 0;
+                width: 100%;
+            }
+            .invoice-container {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: none !important;
+                font-size: 7pt; /* Further reduced font size */
+                line-height: 1.1; /* Adjust line height accordingly */
+                page-break-inside: avoid !important;
+            }
+            /* Further reduce font size for the most complex annexure */
+            #annexture-a-ii-display {
+                font-size: 6pt !important; /* Further reduced font size */
+            }
+            /* Make tables and other elements shrink appropriately */
+            .invoice-container table, .invoice-container td, .invoice-container th {
+                padding: 1px !important; /* Further reduce padding in tables */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html" class="active"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Generate Invoice</h1>
+            <div class="d-flex">
+                <select id="site-select" class="form-select w-auto me-2"></select>
+                <select id="invoice-type-select" class="form-select w-auto me-2">
+                    <option value="icr-1">ICR-1 Format</option>
+                    <option value="annexture">Annexture 4.2(e)</option>
+                    <option value="annexture-b">Annexture 4.2(b)</option>
+                    <option value="annexture-a-ii">Annexture 4.2 (a-ii)</option>
+                </select>
+                <button id="generate-btn" class="btn" style="background-color: var(--primary-color); color: white;">Generate</button>
+                <button id="print-btn" class="btn btn-secondary ms-2">Print</button>
+            </div>
+        </div>
+        
+        <div id="invoice-display" class="invoice-container d-none">
+            <div class="text-right mb-3">
+                 <p class="mb-0">The Director General Agriculture</p>
+                 <p class="mb-0">(Water Management)/ PD PRIAT, Punjab, Lahore</p>
+            </div>
+            <div class="invoice-details mb-3">
+                <table style="border-collapse: collapse;">
+                    <tr>
+                        <td class="label" style="border: none;">Project Name:</td>
+                        <td colspan="3" style="border: none;">Punjab Resilient and Inclusive Agriculture Transformation Project (PRIAT)</td>
+                    </tr>
+                    <tr>
+                        <td class="label" style="border: none;">System Type:</td>
+                        <td colspan="3" style="border: none;">SOLAR</td>
+                    </tr>
+                </table>
+                 <table>
+                    <tr>
+                        <td class="label" style="width: 20%;">Farmer Name:</td>
+                        <td style="width: 30%;" id="inv-farmer-name"></td>
+                        <td class="label" style="width: 20%;">S/O, D/O, W/O:</td>
+                        <td style="width: 30%;" id="inv-relation"></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Farmer CNIC #:</td>
+                        <td id="inv-cnic"></td>
+                        <td class="label">District:</td>
+                        <td id="inv-district"></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Work order No.:</td>
+                        <td id="inv-wo-no"></td>
+                        <td class="label">Work order Date:</td>
+                        <td id="inv-wo-date"></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Area (Acres):</td>
+                        <td id="inv-area"></td>
+                         <td class="label">NTN No.</td>
+                        <td id="inv-ntn"></td>
+                    </tr>
+                     <tr>
+                        <td class="label">Bill/Invoice No.:</td>
+                        <td id="inv-invoice-no"></td>
+                        <td class="label">Invoice Date:</td>
+                        <td id="inv-invoice-date"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="invoice-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">Sr#</th>
+                            <th style="width: 55%;">Description</th>
+                            <th style="width: 20%;">Amount</th>
+                            <th style="width: 20%;">Amount Receivable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td style="position: relative;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>Workorder value with GST</span>
+                                    <div style="margin-left: 20px;">
+                                        <div style="margin-bottom: 4px;">
+                                            <span><b>Govt Share: </b></span>
+                                            <span id="gov-share-span-des" style="display: inline;"></span>
+                                        </div>
+                                        <hr style="margin: 4px 0; border: none; border-top: 1px solid black;">
+                                        <div style="margin-top: 4px;">
+                                            <span><b>Farmer Share: </b></span>
+                                            <span id="farmer-share-span-des" style="display: inline;"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center" id="inv-workorder-value"></td>
+                            <td class="text-center" id="inv-workorder-receivable" style="position: relative;">
+                                <span id="gov-share-span" style="display: block; margin-bottom: 4px;"></span>
+                                <hr style="margin: 4px 0; border: none; border-top: 1px solid black;">
+                                <span id="farmer-share-span" style="display: block; margin-top: 4px;"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">2</td>
+                            <td>Verified Value of the system as per Document</td>
+                            <td class="text-center" id="inv-verified-value"></td>
+                             <td></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">3</td>
+                            <td>Farmer Share in kind</td>
+                             <td class="text-center" id="inv-farmer-kind"></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">4</td>
+                            <td>40% 1st installment of the verified amount at material verification</td>
+                            <td class="text-center" id="inv-first-installment"></td>
+                            <td></td>
+                        </tr>
+                         <tr class="total-row">
+                            <td class="text-center">5</td>
+                            <td>Total Amount for this invoice 40%</td>
+                            <td></td>
+                            <td id="inv-total-amount" class="text-center"></td>
+                        </tr>
+                         <tr>
+                            <td class="text-center">6</td>
+                            <td>Amount in words</td>
+                            <td colspan="2" id="inv-amount-words-cell"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="certification">
+                <p class="mb-0">It is certified that this Bill/Invoice is submitted for the first time under the project titled "Punjab Resilient and Inclusive Agriculture Transformation Project (PRIAT)" for payment. If any discrepancy/dual payment found in the record then DG WM, PUNJAB is authorized to deduct the same from the next payment or the firm will be responsible to refund the amount. (GST Invoice Is Attached).</p>
+            </div>
+
+            <div class="signatures">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <p class="mb-0"><b>Saba Abbas</b></p>
+                    <p class="mb-0">Accounts Officer</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="annexture-display" class="invoice-container d-none">
+            <div class="text-center mb-3">
+                <h6 class="text-end">Annexure 4.2 (e)</h6>
+                <h5 class="my-1">PUNJAB RESILIENT & INCLUSIVE AGRICULTURE TRANSFORMATION (PRIAT) PROJECT</h5>
+                <p><strong>Installation of HEIS System <br> Release of 1st Installment (ICR-1)</strong></p>
+            </div>
+            <div class="d-flex justify-content-end mb-2" style="font-size: 12px;">
+                <div class="d-flex flex-column gap-2">
+                    <span><strong>Date:</strong> <span id="annex-date"></span></span>
+                    <span><strong>F.Y:</strong> <span id="annex-fy"></span></span>
+                    <span><strong>WO (Y/N):</strong> <span id="annex-wo-yn"></span></span>
+                    <span><strong>WO No.:</strong> <span id="annex-wo-no"></span></span>
+                </div>
+            </div>
+
+            <table class="annexture-table mb-3">
+                <tr>
+                    <td style="width:15%"><b>Farmer Name</b></td>
+                    <td style="width:35%" id="annex-farmer-name"></td>
+                    <td colspan="2" style="width:50%">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <b>CNIC No. (Must Entry)</b>
+                            <div id="cnic-digits" style="display: flex; gap: 2px;"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width:15%"><b>Phone No.</b></td>
+                    <td style="width:35%">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div id="phone-digits" style="display: flex; gap: 2px;"></div>
+                        </div>
+                    </td>
+                    <td><b>Land Holding (Acres)</b> <span id="annex-land-holding"></span></td>
+                    <td><b>Fard-e-Malkiyat No. (Must entry)</b> <span id="annex-fard-no"></span></td>
+                </tr>
+            </table>
+
+            <table class="annexture-table">
+                <tr>
+                    <td rowspan="2" style="width: 25%;"><b>GPS Coordinates (Degree Decimel)</b></td>
+                    <td style="width: 25%;"><b>N:</b> <span id="annex-gps-n"></span></td>
+                    <td style="width: 25%;"><b>Village/Chak No.</b></td>
+                    <td style="width: 25%;" id="annex-village"></td>
+                </tr>
+                <tr>
+                    <td><b>E:</b> <span id="annex-gps-e"></span></td>
+                    <td><b>Tehsil</b></td>
+                    <td id="annex-tehsil"></td>
+                </tr>
+                
+                <tr>
+                    <td><b>Type to Schene (Drip/Sorinkler)</b></td>
+                    <td id="annex-scheme-type"></td>
+                    <td><b>District</b></td>
+                    <td id="annex-district"></td>
+                </tr>
+                <tr>
+                    <td><b>Name of SSC</b></td>
+                    <td id="annex-ssc-name"></td>
+                    <td><b>Crop (s)</b></td>
+                    <td id="annex-crops"></td>
+                </tr>
+                <tr>
+                    <td><b>Work order date</b></td>
+                    <td id="annex-wo-date"></td>
+                    <td><b>Area under HEIS (Acres)</b></td>
+                    <td id="annex-heis-area"></td>
+                </tr>
+                 <tr>
+                    <td></td>
+                    <td></td>
+                    <td><b>Material Verification Period (Days)</b></td>
+                    <td id="annex-verification-period"></td>
+                </tr>
+            </table>
+
+            <h6 class="mt-4"><strong>Cost Break-up</strong></h6>
+            <table class="annexture-table my-3">
+                 <tr>
+                    <td rowspan="2" style="width:25%; vertical-align: middle;"><b>Total Scheme Cost (Rs.) (As per WO/Revised)</b><br><span id="annex-total-scheme-cost"></span></td>
+                    <td><b>Government Share</b></td>
+                    <td colspan="3"><b>Farmer Share</b></td>
+                    <td colspan="2"><b>PO/DD Details</b></td>
+                 </tr>
+                 <tr>
+                    <td style="padding: 0;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                            <tr><td style="border-top: 0; border-left: 0; border-bottom: 1px solid #000; border-right: 0; padding: 2px 5px; text-align: center;"><b>PKR</b></td></tr>
+                            <tr><td style="border-left: 0; border-right: 0; border-bottom: 0;  padding: 4px 5px; text-align: center;"><span id="annex-govt-share"></span></td></tr>
+                        </table>
+                    </td>
+                    <td style="padding: 0;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                            <tr><td style="border-top: 0; border-left: 0; border-bottom: 1px solid #000; border-right: 0; padding: 2px 5px; text-align: center;"><b>Total</b></td></tr>
+                            <tr><td style="border-left: 0; border-right: 0; border-bottom: 0;  padding: 4px 5px; text-align: center;"><span id="annex-total-pkr-farmer"></span></td></tr>
+                        </table>
+                    </td>
+                    <td style="padding: 0;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                            <tr><td style="border-top: 0; border-left: 0; border-bottom: 1px solid #000; border-right: 0; padding: 2px 5px; text-align: center;"><b>In Kind</b></td></tr>
+                            <tr><td style="border-left: 0; border-right: 0; border-bottom: 0;  padding: 4px 5px; text-align: center;"><span id="annex-farmer-in-kind"></span></td></tr>
+                        </table>
+                    </td>
+                    <td style="padding: 0;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                            <tr><td style="border-top: 0; border-left: 0; border-bottom: 1px solid #000; border-right: 0; padding: 2px 5px; text-align: center;"><b>In Cash</b></td></tr>
+                            <tr><td style="border-left: 0; border-right: 0; border-bottom: 0;  padding: 4px 5px; text-align: center;"><span id="annex-in-cash"></span></td></tr>
+                        </table>
+                    </td>
+                    <td colspan="2" style="padding: 0;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <tr>
+                                <td style="width: 50%; border-top: 0; border-left: 0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 2px 5px;"><b>Bank Name</b></td>
+                                <td style="border-top: 0; border-right: 0; border-bottom: 1px solid #000; padding: 2px 5px;"><span id="annex-bank-name"></span></td>
+                            </tr>
+                            <tr>
+                                <td style="border-left: 0; border-bottom: 1px solid #000; border-right: 1px solid #000; padding: 2px 5px;"><b>DD/PO No.</b></td>
+                                <td style="border-right: 0; border-bottom: 1px solid #000; padding: 2px 5px;"><span id="annex-po-no"></span></td>
+                            </tr>
+                            <tr>
+                                <td style="border-left: 0; border-bottom: 0; border-right: 1px solid #000; padding: 2px 5px;"><b>Date</b></td>
+                                <td style="border-right: 0; border-bottom: 0; padding: 2px 5px;"><span id="annex-po-date"></span></td>
+                            </tr>
+                        </table>
+                    </td>
+                 </tr>
+            </table>
+            
+            <table class="annexture-cost-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:10%"><strong>Sr. No.</strong></th>
+                        <th class="text-center" style="width:60%"><strong>Particulars</strong></th>
+                        <th class="text-center" style="width:15%"><strong>(Rs.)</strong></th>
+                        <th class="text-center" style="width:15%"><strong>% of total Scherime Cost</strong></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-center">1</td>
+                        <td>Total Scheme cost (As per WO/Revised)</td>
+                        <td class="text-end" id="annex-breakup-total-cost"></td>
+                        <td class="text-center">100%</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">2</td>
+                        <td>Cost of Material not supplied / not verified</td>
+                        <td id="annex-breakup-not-supplied" class="text-end"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">3</td>
+                        <td>Cost of material in kind</td>
+                        <td id="annex-breakup-in-kind" class="text-end"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">4</td>
+                        <td>Amount to be paid as ICR-1: (50% of (total scheme cost less cost of material not supplied as stated at S.No.2)} less cost of material in kind as stated at S.No. 3 i.e., 4 = (0.5* (1-2))-3</td>
+                        <td id="annex-breakup-icr1-amount" class="text-end"></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="annexture-signatures">
+                <div class="flex flex-col">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <b><p class="m-0 font-semibold">Submitted By:</p></b>
+                            <p class="m-0 mt-1">Name & Signature of SSC:______________________</p>
+                        </div>
+                        <div style="width: 300px;">
+                            <br>
+                            <div class="m-0 mt-1">
+                                Official Stamp & Date: _______________________
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <b><p class="m-0 font-semibold">Checked/Verified By:</p></b>
+                            <p class="m-0 mt-1">Name & Signature of ADA (OFWM):______________________</p>
+                        </div>
+                        <div style="width: 300px;">
+                            <br>
+                            <div class="m-0 mt-1">Official Stamp & Date:______________________</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <b><p class="m-0 font-semibold">Forwarded By:</p></b>
+                            <p class="m-0 mt-1">Name & Signature of DDA (OFWM):______________________</p>
+                        </div>
+                        <div style="width: 300px;">
+                            <br>
+                            <div class="m-0 mt-1">Official Stamp & Date:______________________</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <div class="annexture-footer mt-3">
+                <p class="mb-1"><strong>Certificate by Project Implementation Supeervision & Third Party Validation (PIS&TPV) Consultants:</strong></p>
+                <p style="text-align: justify;">Certified that material supplied at site is in accordance with the approved design and cost estimates (Bill of quantities and material inspection report attached). Release of ______________________% of total scheme cost amounting to Rs ______________________________(in words rupees)_______________________________ only)is recommended in favour of <strong> M/S Haji Sons.</strong> After observing all codal formalities.</p>
+                
+                <div class="d-flex justify-content-between mt-2">
+                     <div style="width: 250%;">
+                        <div class="signature-line"></div>
+                        <p class="mb-0">Name & Signature of PIS&TPV Consultant Rep/FE:</p>
+
+                    </div>
+                    <div style="width: 400px;">
+                            <div class="signature-line" style="width: 150%;"></div>
+                            <div class="m-0 mt-1">Official Stamp & Date:</div>
+                    </div>
+                    <div style="width: 45%; margin-top: 20px;"></div>
+
+                </div>
+                <div class="mt-4">
+                    <strong>Pre-requisites for release of 1st Instalment:</strong>
+                    <ul style="font-size: 12px;" class="mb-0">
+                        <li>Issued Work order.</li>
+                        <li>Material Inspection Report.</li>
+                        <li>Approved Bill of Quantities (BOQ)</li>
+                    </ul>
+                    </div>
+            </div>
+        </div>
+
+        <div id="annexture-b-display" class="invoice-container d-none">
+    <div class="text-center mb-3">
+        <h6 class="text-end">Annexure 4.2 (b)</h6>
+        <h6 style="border:1px solid #000;padding:8px;">PUNJAB RESILIENT & INCLUSIVE AGRICULTURE TRANSFORMATION (PRIAT) PROJECT</h6>
+        <h6 class="text-center" style="border:1px solid black;padding:8px;">MATERIAL INSPECTION REPORT (HEIS)</h6>
+    </div>
+    <table class="invoice-details mb-3">
+        <tr>
+            <td class="label">Name of Farmer</td>
+            <td id="annex-b-farmer-name"></td>
+            <td class="label">Area</td>
+            <td id="annex-b-area"></td>
+            <td class="label">District</td>
+            <td id="annex-b-district"></td>
+            <td class="label">GPS Coordinates N:</td>
+            <td id="annex-b-gps-n"></td>
+        </tr>
+        <tr>
+            <td class="label">CNIC</td>
+            <td id="annex-b-cnic"></td>
+            <td class="label">Contact No.</td>
+            <td id="annex-b-contact"></td>
+            <td class="label">SSC</td>
+            <td id="annex-b-ssc"></td>
+            <td class="label">E:</td>
+            <td id="annex-b-gps-e"></td>
+        </tr>
+    </table>
+
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th>S.N</th>
+                <th>Item Description</th>
+                <th>Make/Standards</th>
+                <th>Specification</th>
+                <th>Unit</th>
+                <th>Quantity</th>
+                <th>Unit Rate (PKR)</th>
+                <th>Total Material Cost incl. GST</th>
+                <th>Material Not Delivered Cost</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody id="annex-b-items-body">
+            <!-- Items will be dynamically populated here -->
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7"><b>Total Cost of Material (PKR)</b></td>
+                <td id="annex-b-total-cost"></td>
+                <td colspan="2"></td>
+            </tr>
+            <tr>
+                <td colspan="7"><b>Cost of Material not Supplied / Not verified (Rs.)</b></td>
+                <td id="annex-b-not-supplied-cost"></td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="signatures" style="margin-top: 20px;">
+        <div class="signature-box" style="border: 1px solid #000; padding: 10px; margin: 10px 0;">
+            <p style="margin-bottom: 60px;">Material received By</p>
+        </div>
+        <div class="signature-box"  style="border: 1px solid #000; padding: 10px; margin: 10px 0;">
+            <p>Material Receiving certificate</p>
+            <p style="font-size: 8px;">(I certify that I have received material as per above details and take full responsibility for its safe custody till installation)</p>
+        </div>
+        <div class="signature-box" style="border: 1px solid #000; padding: 10px; margin: 10px 0;">
+            <p>Witnessed By</p>
+        </div>
+        <div class="signature-box" style="border: 1px solid #000; padding: 10px; margin: 10px 0;">
+            <p>Material Verified By</p>
+        </div>
+    </div>
+</div>
+
+<div id="annexture-a-ii-display" class="invoice-container d-none">
+    <div class="text-center mb-3">
+        <h6 class="text-end">Annexure 4.2 (a-ii)</h6>
+        <h6 style="border:1px solid #000;padding:8px;">PUNJAB RESILIENT & INCLUSIVE AGRICULTURE TRANSFORMATION (PRIAT) PROJECT</h6>
+        <h6 class="text-center" style="border:1px solid black;padding:8px;">BILL OF QUANTITY</h6>
+    </div>
+    <table class="invoice-details mb-3">
+         <tr>
+            <td class="label">Beneficiary Name:</td>
+            <td id="annex-a-ii-farmer-name"></td>
+            <td class="label">District:</td>
+            <td id="annex-a-ii-district"></td>
+            <td class="label">System Type:</td>
+            <td id="annex-a-ii-system-type"></td>
+            <td class="label">Area (acres):</td>
+            <td id="annex-a-ii-area"></td>
+        </tr>
+    </table>
+
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="width: 3%;">S.N</th>
+                <th style="width: 24%;">Item Description</th>
+                <th style="width: 10%;">Make/Standards</th>
+                <th style="width: 10%;">Specification</th>
+                <th style="width: 5%;">Unit</th>
+                <th style="width: 7%;">Quantity</th>
+                <th style="width: 9%;">Unit Rate (PKR)</th>
+                <th style="width: 9%;">Cost (PKR)</th>
+                <th style="width: 8%;">GST Rate</th>
+                <th style="width: 8%;">GST (PKR)</th>
+                <th style="width: 9%;">Total (PKR)</th>
+            </tr>
+        </thead>
+        <tbody id="annex-a-ii-items-body">
+            <!-- Items will be dynamically populated here -->
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="7" style="text-align:left;"><b>Total Service Charges (PKR)</b></td>
+                <td id="annex-a-ii-total-service-cost" class="text-end"></td>
+                <td></td>
+                <td id="annex-a-ii-total-service-gst" class="text-end"></td>
+                <td id="annex-a-ii-total-service-total" class="text-end"></td>
+            </tr>
+            <tr>
+                <td colspan="7" style="text-align:left;"><b>Total Scheme Cost (PKR)</b></td>
+                <td id="annex-a-ii-total-scheme-cost" class="text-end"></td>
+                <td></td>
+                <td id="annex-a-ii-total-scheme-gst" class="text-end"></td>
+                <td id="annex-a-ii-total-scheme-total" class="text-end"></td>
+            </tr>
+             <tr>
+                <td colspan="10" style="text-align:left;"><b>Per Acre Cost (PKR)</b></td>
+                <td id="annex-a-ii-per-acre-cost" class="text-end"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h6 class="mt-4"><strong>Description</strong></h6>
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="width: 40%;">Description</th>
+                <th style="width: 15%;">Farmer Share</th>
+                <th style="width: 15%;">Farmer Share 2</th>
+                <th style="width: 15%;">Total (PKR)</th>
+                <th style="width: 15%;">Total %</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><b>System Cost (PKR)</b></td>
+                <td id="annex-a-ii-desc-system-cost-fs" class="text-center"></td>
+                <td></td>
+                <td id="annex-a-ii-desc-system-cost-total" class="text-center"></td>
+                <td class="text-center">100%</td>
+            </tr>
+            <tr>
+                <td><b>Govt Share (PKR)</b></td>
+                <td id="annex-a-ii-desc-govt-share-fs" class="text-center"></td>
+                <td></td>
+                <td id="annex-a-ii-desc-govt-share-total" class="text-center"></td>
+                <td class="text-center">75%</td>
+            </tr>
+            <tr>
+                <td><b>Farmer Share (PKR)</b></td>
+                <td id="annex-a-ii-desc-farmer-share-fs" class="text-center"></td>
+                <td></td>
+                <td id="annex-a-ii-desc-farmer-share-total" class="text-center"></td> 
+                <td class="text-center">25%</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="border: 1px solid #000; padding: 10px; margin-top: 40px; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="text-align: left;">
+                <p style="margin-bottom: 40px;">Prepared SSC</p>
+                <p>_________________________</p>
+                <p>Signature & Stamp</p>
+            </div>
+            <div style="text-align: left;">
+                <p style="margin-bottom: 40px;">Approved by PRIAT Consultant</p>
+                <p>_________________________</p>
+                <p>Signature & Stamp</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        function numberToWords(num) {
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const thousands = ['', 'Thousand', 'Million', 'Billion'];
+            if (num === 0) return 'Zero';
+            if (typeof num !== 'number') return '';
+            let numStr = Math.floor(num).toString();
+            if (numStr.length > 9) return 'overflow';
+            let result = '';
+            let i = 0;
+            while(numStr.length > 0) {
+                let chunk = parseInt(numStr.slice(-3));
+                if (chunk) {
+                    let hundreds = chunk > 99 ? ones[Math.floor(chunk / 100)] + ' Hundred ' : '';
+                    let rem = chunk % 100;
+                    let ten = rem < 20 && rem > 9 ? teens[rem - 10] : tens[Math.floor(rem / 10)];
+                    let one = rem < 10 ? ones[rem] : (rem % 10 > 0 && rem > 19 ? ones[rem%10] : '');
+                    let space = (ten && one) ? ' ' : '';
+                    result = hundreds + ten + space + one + ' ' + thousands[i] + ' ' + result;
+                }
+                numStr = numStr.slice(0, -3);
+                i++;
+            }
+            return result.trim();
+        }
+
+        async function loadSites() {
+            const { data: sites, error } = await supabase.from('site_details').select('id, site_name');
+            if (error) { console.error('Error loading sites:', error); return; }
+            const select = document.getElementById('site-select');
+            select.innerHTML = '<option value="">Select Site</option>' +
+                sites.map(site => `<option value="${site.id}">${site.site_name}</option>`).join('');
+        }
+        
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value ?? '';
+        };
+         const setHtml = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = value ?? '';
+        };
+
+        
+        async function getSiteData(siteId) {
+             if (!siteId) { alert('Please select a site.'); return null; }
+            const { data: site, error } = await supabase.from('site_details').select('*').eq('id', siteId).single();
+            if (error || !site) { alert('Failed to fetch site details.'); console.error('Fetch error:', error); return null; }
+            return site;
+        }
+
+        async function generateInvoice(siteId) {
+            const site = await getSiteData(siteId);
+            if (!site) return;
+
+            setText('inv-farmer-name', site.site_name.split('-').pop());
+            setText('inv-relation', site.sdo);
+            setText('inv-cnic', site.cnic);
+            setText('inv-district', site.district);
+            setText('inv-wo-no', site.wo_no);
+            setText('inv-wo-date', site.wo_date ? new Date(site.wo_date).toLocaleDateString('en-GB') : 'N/A');
+            setText('inv-area', site.area);
+            setText('inv-ntn', site.fard_id); 
+            setText('inv-invoice-no', `26/HS/S/001`);
+            setText('inv-invoice-date', new Date().toLocaleDateString('en-GB'));
+
+            const projectCost = parseFloat(site.project_cost) || 0;
+            const govShare = parseFloat(site.govt_share) || 0;
+            const farmerShare = parseFloat(site.total_farmer_share) || 0;
+            const verifiedValue = projectCost;
+            const farmerKind = parseFloat(site.in_kind) || 0;
+            const firstInstallment = verifiedValue * 0.4;
+
+            setText('inv-workorder-value', projectCost.toLocaleString());
+            // Replace this line:
+            // setHtml('inv-workorder-receivable', `${govShare.toLocaleString()}<br>${farmerShare.toLocaleString()}`);
+            // With these:
+            setText('gov-share-span', govShare.toLocaleString());
+            setText('farmer-share-span', farmerShare.toLocaleString());
+
+            setText('gov-share-span-des', govShare.toLocaleString());
+            setText('farmer-share-span-des', farmerShare.toLocaleString());
+            
+            setText('inv-verified-value', verifiedValue.toLocaleString());
+            setText('inv-farmer-kind', farmerKind.toLocaleString());
+            setText('inv-first-installment', firstInstallment.toLocaleString());
+            setText('inv-total-amount', firstInstallment.toLocaleString());
+            setText('inv-amount-words-cell', numberToWords(firstInstallment) + ' Only');
+
+            document.getElementById('invoice-display').classList.remove('d-none');
+        }
+
+        async function generateAnnexture(siteId) {
+            const site = await getSiteData(siteId);
+            if (!site) return;
+
+            setText('annex-date', new Date().toLocaleDateString('en-GB'));
+            const currentYear = new Date().getFullYear();
+            setText('annex-fy', `${currentYear}-${(currentYear + 1).toString().slice(-2)}`);
+            setText('annex-wo-yn', site.wo_no ? 'Y' : 'N');
+            setText('annex-wo-no', site.wo_no);
+            
+            setText('annex-farmer-name', site.site_name.split('-').pop());
+            const cnicContainer = document.getElementById('cnic-digits');
+            if (cnicContainer && site.cnic) {
+                cnicContainer.innerHTML = site.cnic.split('').map(digit => `<div class="digit-box">${digit}</div>`).join('');
+            }
+            const phoneContainer = document.getElementById('phone-digits');
+            if (phoneContainer && site.contact_number) {
+                phoneContainer.innerHTML = site.contact_number.split('').map(digit => `<div class="digit-box">${digit}</div>`).join('');
+            }
+            setText('annex-land-holding', site.area);
+            const [gpsN, gpsE] = site.gps_coordinates ? site.gps_coordinates.split(',') : ['N/A', 'N/A'];
+            setText('annex-gps-n', site.longitude);
+            setText('annex-gps-e', site.latitude);
+            setText('annex-fard-no', site.fard_id);
+            setText('annex-village', site.address);
+            setText('annex-tehsil', site.tehsil);
+            setText('annex-district', site.district);
+            setText('annex-scheme-type', site.scheme_type);
+            setText('annex-crops', site.crop);
+            setText('annex-ssc-name', 'Haji Sons');
+            setText('annex-heis-area', site.area);
+            setText('annex-wo-date', site.wo_date ? new Date(site.wo_date).toLocaleDateString('en-GB') : 'N/A');
+            setText('annex-verification-period', 'N/A');
+
+            const totalCost = parseFloat(site.project_cost) || 0;
+            const govtShare = parseFloat(site.govt_share) || 0;
+            const farmerShareTotal = parseFloat(site.total_farmer_share) || 0;
+            const farmerInKind = parseFloat(site.in_kind) || 0;
+            const farmerInCash = parseFloat(site.in_cash) || 0;
+            const icr1Amount = (0.5 * totalCost) - farmerInKind;
+
+            setText('annex-total-scheme-cost', totalCost.toLocaleString());
+            setText('annex-govt-share', govtShare.toLocaleString());
+            setText('annex-total-pkr-farmer', farmerShareTotal.toLocaleString());
+            setText('annex-farmer-in-kind', farmerInKind.toLocaleString());
+            setText('annex-in-cash', farmerInCash.toLocaleString());
+            setText('annex-bank-name', site.bank);
+            setText('annex-po-date', site.dd_date ? new Date(site.dd_date).toLocaleDateString('en-GB') : 'N/A');
+            setText('annex-po-no', site.dd_no);
+
+            setText('annex-breakup-total-cost', totalCost.toLocaleString());
+            setText('annex-breakup-not-supplied', '0'); // Assuming 0 if not provided
+            setText('annex-breakup-in-kind', farmerInKind.toLocaleString());
+            setText('annex-breakup-icr1-amount', icr1Amount.toLocaleString());
+            
+            setText('annex-cert-percent', '50');
+            setText('annex-cert-amount', icr1Amount.toLocaleString());
+            setText('annex-cert-amount-words', numberToWords(icr1Amount));
+            setText('annex-cert-ssc-name', 'Haji Sons');
+
+            document.getElementById('annexture-display').classList.remove('d-none');
+        }
+
+        async function generateAnnextureB(siteId) {
+    const site = await getSiteData(siteId);
+    if (!site) return;
+
+    // Populate header
+    setText('annex-b-farmer-name', site.site_name.split('-').pop());
+    setText('annex-b-area', site.area);
+    setText('annex-b-district', site.district);
+    setText('annex-b-cnic', site.cnic);
+    setText('annex-b-contact', site.contact_number);
+    setText('annex-b-ssc', 'Haji Sons');
+    setText('annex-b-gps-n', site.longitude);
+    setText('annex-b-gps-e', site.latitude);
+
+    // Fetch and populate items
+    const { data: boqItems, error } = await supabase.from('boq_details').select('*').eq('site_id', siteId);
+    if (error) {
+        console.error('Error fetching BOQ items:', error);
+        return;
+    }
+
+    const itemsBody = document.getElementById('annex-b-items-body');
+    itemsBody.innerHTML = '';
+    let totalCost = 0;
+
+    const categoryOrder = [
+        "PUMP SET & PRIMER MOVER",
+        "PIPES & FITTINGS",
+        "FILTERATION & FERTIGATION",
+        "EMITTING DEVICES",
+        "ACCESSORIES",
+        "MONITURING DEVICES"
+    ];
+
+    const categories = {};
+    categoryOrder.forEach(category => {
+        categories[category] = [];
+    });
+
+    boqItems.forEach(item => {
+        if (categories[item.item_category]) {
+            categories[item.item_category].push(item);
+        }
+    });
+
+    let snCounter = 1;
+    for (const category of categoryOrder) {
+        const items = categories[category];
+        if (items.length > 0) {
+            const categoryRow = document.createElement('tr');
+            categoryRow.innerHTML = `<td colspan="10"><b>${snCounter}. ${category}</b></td>`;
+            itemsBody.appendChild(categoryRow);
+            snCounter++;
+
+            items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                totalCost += parseFloat(item.total) || 0;
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.item_description}</td>
+                    <td>${item.standards}</td>
+                    <td>${item.specifications}</td>
+                    <td>${item.unit}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.unit_rate}</td>
+                    <td>${item.total.toLocaleString()}</td>
+                    <td></td>
+                    <td></td>
+                `;
+                itemsBody.appendChild(row);
+            });
+        }
+    }
+
+    setText('annex-b-total-cost', totalCost.toLocaleString());
+    setText('annex-b-not-supplied-cost', '0'); // Assuming 0 for now
+
+    document.getElementById('annexture-b-display').classList.remove('d-none');
+}
+
+async function generateAnnextureAii(siteId) {
+    const site = await getSiteData(siteId);
+    if (!site) return;
+
+    // Populate header
+    setText('annex-a-ii-farmer-name', site.site_name.split('-').pop());
+    setText('annex-a-ii-district', site.district);
+    setText('annex-a-ii-system-type', site.scheme_type);
+    setText('annex-a-ii-area', site.area);
+
+    // Fetch and populate items
+    const { data: boqItems, error } = await supabase.from('boq_details').select('*').eq('site_id', siteId);
+    if (error) {
+        console.error('Error fetching BOQ items:', error);
+        return;
+    }
+
+    const itemsBody = document.getElementById('annex-a-ii-items-body');
+    itemsBody.innerHTML = '';
+    
+    let totalMaterialCost = 0;
+    let totalMaterialGst = 0;
+    let totalMaterialTotal = 0;
+
+    let totalServiceCost = 0;
+    let totalServiceGst = 0;
+    let totalServiceTotal = 0;
+
+    const categoryOrder = [
+        "PUMP SET & PRIMER MOVER",
+        "FILTERATION & FERTIGATION",
+        "PIPES & FITTINGS",
+        "EMITTING DEVICES",
+        "ACCESSORIES",
+        "MONITORING DEVICES",
+        "CIVIL WORKS",
+        "SERVICE CHARGES"
+    ];
+
+    const categories = {};
+    categoryOrder.forEach(category => {
+        categories[category] = [];
+    });
+
+    boqItems.forEach(item => {
+        if (item.item_category) {
+            let itemCategory = item.item_category.toUpperCase();
+            if (itemCategory === "MONITURING DEVICES") { // Fix typo from DB
+                itemCategory = "MONITORING DEVICES";
+            }
+            if (categories[itemCategory]) {
+                categories[itemCategory].push(item);
+            }
+        }
+    });
+
+    let snCounter = 1;
+    for (const category of categoryOrder) {
+        const items = categories[category];
+        if (items.length > 0) {
+            const categoryRow = document.createElement('tr');
+            categoryRow.innerHTML = `<td colspan="11" style="text-align:left;"><b>${snCounter}. ${category}</b></td>`;
+            itemsBody.appendChild(categoryRow);
+            snCounter++;
+
+            let categorySubTotal = 0;
+
+            items.forEach((item, index) => {
+                const row = document.createElement('tr');
+                const qty = parseFloat(item.qty) || 0;
+                const unitRate = parseFloat(item.unit_rate) || 0;
+                const total = parseFloat(item.total) || 0;
+                const cost = qty * unitRate;
+                const gst = total - cost;
+                const gstRate = cost > 0 ? Math.round((gst / cost) * 100) + '%' : '0%';
+                
+                if (category.toUpperCase() === "SERVICE CHARGES") {
+                    totalServiceCost += cost;
+                    totalServiceGst += gst;
+                    totalServiceTotal += total;
+                    row.innerHTML = `
+                        <td class="text-center">${index + 1}</td>
+                        <td colspan="3">${item.item_description || ''}</td>
+                        <td class="text-center">${item.unit || ''}</td>
+                        <td class="text-center">${qty}</td>
+                        <td class="text-end">${unitRate.toLocaleString()}</td>
+                        <td class="text-end">${cost.toLocaleString()}</td>
+                        <td class="text-center">${gstRate}</td>
+                        <td class="text-end">${gst.toLocaleString()}</td>
+                        <td class="text-end">${total.toLocaleString()}</td>
+                    `;
+                } else {
+                    totalMaterialCost += cost;
+                    totalMaterialGst += gst;
+                    totalMaterialTotal += total;
+                    row.innerHTML = `
+                        <td class="text-center">${index + 1}</td>
+                        <td>${item.item_description || ''}</td>
+                        <td>${item.standards || ''}</td>
+                        <td>${item.specifications || ''}</td>
+                        <td class="text-center">${item.unit || ''}</td>
+                        <td class="text-center">${qty}</td>
+                        <td class="text-end">${unitRate.toLocaleString()}</td>
+                        <td class="text-end">${cost.toLocaleString()}</td>
+                        <td class="text-center">${gstRate}</td>
+                        <td class="text-end">${gst.toLocaleString()}</td>
+                        <td class="text-end">${total.toLocaleString()}</td>
+                    `;
+                }
+                categorySubTotal += total;
+                itemsBody.appendChild(row);
+            });
+
+            const subTotalRow = document.createElement('tr');
+            subTotalRow.innerHTML = `<td colspan="10" style="text-align:right;"><b>Sub Total</b></td><td class="text-end"><b>${categorySubTotal.toLocaleString()}</b></td>`;
+            itemsBody.appendChild(subTotalRow);
+
+            if (category.toUpperCase() === 'CIVIL WORKS') {
+                const totalMaterialRow = document.createElement('tr');
+                totalMaterialRow.style.fontWeight = 'bold';
+                totalMaterialRow.innerHTML = `
+                    <td colspan="7" style="text-align:right;">Total Cost of Material (PKR)</td>
+                    <td class="text-end">${totalMaterialCost.toLocaleString()}</td>
+                    <td></td>
+                    <td class="text-end">${totalMaterialGst.toLocaleString()}</td>
+                    <td class="text-end">${totalMaterialTotal.toLocaleString()}</td>
+                `;
+                itemsBody.appendChild(totalMaterialRow);
+            }
+        }
+    }
+
+    const totalSchemeCostVal = totalMaterialCost + totalServiceCost;
+    const totalSchemeGst = totalMaterialGst + totalServiceGst;
+    const totalSchemeTotal = totalMaterialTotal + totalServiceTotal;
+    const perAcreCost = site.area > 0 ? totalSchemeTotal / parseFloat(site.area) : 0;
+
+    setText('annex-a-ii-total-service-cost', totalServiceCost.toLocaleString());
+    setText('annex-a-ii-total-service-gst', totalServiceGst.toLocaleString());
+    setText('annex-a-ii-total-service-total', totalServiceTotal.toLocaleString());
+
+    setText('annex-a-ii-total-scheme-cost', totalSchemeCostVal.toLocaleString());
+    setText('annex-a-ii-total-scheme-gst', totalSchemeGst.toLocaleString());
+    setText('annex-a-ii-total-scheme-total', totalSchemeTotal.toLocaleString());
+
+    setText('annex-a-ii-per-acre-cost', perAcreCost.toLocaleString());
+
+    const systemCost = totalSchemeTotal;
+    const newGovtShare = systemCost * 0.75;
+    const newFarmerShare = systemCost * 0.25;
+
+    // System Cost Row
+    setText('annex-a-ii-desc-system-cost-fs', systemCost.toLocaleString());
+    setText('annex-a-ii-desc-system-cost-total', systemCost.toLocaleString());
+
+    // Govt Share Row
+    setText('annex-a-ii-desc-govt-share-fs', newGovtShare.toLocaleString());
+    setText('annex-a-ii-desc-govt-share-total', newGovtShare.toLocaleString());
+
+    // Farmer Share Row
+    setText('annex-a-ii-desc-farmer-share-fs', newFarmerShare.toLocaleString());
+    setText('annex-a-ii-desc-farmer-share-total', newFarmerShare.toLocaleString());
+
+
+    document.getElementById('annexture-a-ii-display').classList.remove('d-none');
+}
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSites();
+            document.getElementById('generate-btn').addEventListener('click', () => {
+                const selectedSiteId = document.getElementById('site-select').value;
+                const invoiceType = document.getElementById('invoice-type-select').value;
+
+                // Hide all invoice containers first
+                document.getElementById('invoice-display').classList.add('d-none');
+                document.getElementById('annexture-display').classList.add('d-none');
+                document.getElementById('annexture-b-display').classList.add('d-none');
+                document.getElementById('annexture-a-ii-display').classList.add('d-none');
+
+                if (invoiceType === 'icr-1') {
+                    generateInvoice(selectedSiteId);
+                } else if (invoiceType === 'annexture') {
+                    generateAnnexture(selectedSiteId);
+                } else if (invoiceType === 'annexture-b') {
+                    generateAnnextureB(selectedSiteId);
+                } else if (invoiceType === 'annexture-a-ii') {
+                    generateAnnextureAii(selectedSiteId);
+                }
+            });
+
+            document.getElementById('print-btn').addEventListener('click', () => {
+                window.print();
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

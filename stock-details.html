@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Stock Details - HS Priat Software</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            gap: 1rem;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Make sidebar scrollable */
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            white-space: nowrap; /* Prevent text wrapping */
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            flex-grow: 1; /* Allow main content to take remaining space */
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+            margin-bottom: 1.5rem; /* Added margin for spacing */
+        }
+
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Button Overrides */
+        .btn-primary,
+        .btn-primary:focus {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            box-shadow: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085; /* Darker Teal */
+            border-color: #16a085;
+        }
+
+        .btn-secondary,
+        .btn-secondary:focus {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d; /* Darker Silver */
+            border-color: #7f8c8d;
+            color: #fff;
+        }
+        
+        .btn-info,
+        .btn-info:focus {
+            background-color: #3498db; /* Blue */
+            border-color: #3498db;
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .btn-info:hover {
+            background-color: #2980b9; /* Darker Blue */
+            border-color: #2980b9;
+            color: #fff;
+        }
+
+        .btn-danger,
+        .btn-danger:focus {
+            background-color: #e74c3c;
+            border-color: #e74c3c;
+            box-shadow: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+            border-color: #c0392b;
+        }
+
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table thead th {
+            background-color: var(--sidebar-bg);
+            color: white;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .table td, .table th {
+            vertical-align: middle;
+            padding: 0.85rem;
+        }
+
+        .table .amount-cell {
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .table .action-cell {
+            text-align: center;
+        }
+
+        /* Adjust form card to use new card styles */
+        #stockFormCard {
+            /* Now inherits from .card, so specific styling is minimal */
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="main-sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Stock Details</h1>
+            <div>
+                <button id="addItemBtn" class="btn btn-info me-2">Add Item</button>
+                <button id="addStockBtn" class="btn btn-primary me-2">Add Stock</button>
+                <button id="toggleFilterBtn" class="btn btn-secondary">Filters</button>
+            </div>
+        </div>
+
+        <!-- Add Item Form -->
+        <div id="addItemFormCard" class="card" style="display: none;">
+            <div class="card-header">
+                <h5 id="addItemFormTitle">Add New Item</h5>
+            </div>
+            <div class="card-body">
+                <form id="itemEntryForm">
+                    <div class="mb-3">
+                        <label for="newItemName" class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="newItemName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newItemImportName" class="form-label">Item Import Name</label>
+                        <input type="text" class="form-control" id="newItemImportName" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit Item</button>
+                    <button type="button" class="btn btn-secondary" id="cancelAddItemBtn">Cancel</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Stock Entry Form -->
+        <div id="stockFormCard" class="card" style="display: none;">
+            <div class="card-header">
+                <h5 id="formTitle">Enter New Stock</h5>
+            </div>
+            <div class="card-body">
+                <form id="stockEntryForm">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="item_description" class="form-label">Item Description</label>
+                            <select class="form-select" id="item_description" required></select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="uom" class="form-label">Unit of Measure</label>
+                            <input type="text" class="form-control" id="uom" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="qty" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="qty" step="any" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="rate" class="form-label">Rate</label>
+                            <input type="number" class="form-control" id="rate" step="any" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="vendor_name" class="form-label">Vendor Name</label>
+                            <input type="text" class="form-control" id="vendor_name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="vendor_doc" class="form-label">Vendor Doc Link</label>
+                            <input type="text" class="form-control" id="vendor_doc">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="po_no" class="form-label">PO Number</label>
+                            <input type="number" class="form-control" id="po_no">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="po_date" class="form-label">PO Date</label>
+                            <input type="date" class="form-control" id="po_date">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="purchase_by" class="form-label">Purchased By</label>
+                            <input type="text" class="form-control" id="purchase_by">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="req_person" class="form-label">Requesting Person</label>
+                            <input type="text" class="form-control" id="req_person">
+                        </div>
+                    </div>
+                     <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="req_dept" class="form-label">Requesting Dept</label>
+                            <input type="text" class="form-control" id="req_dept">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="stockin_date" class="form-label">Stock-in Date</label>
+                            <input type="date" class="form-control" id="stockin_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="remarks" class="form-label">Remarks</label>
+                        <textarea class="form-control" id="remarks" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="filterPane" class="card mt-4" style="display: none;">
+            <div class="card-header">
+                Filter Stock Details
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="filterItemDescription" class="form-label">Item Description</label>
+                        <input type="text" class="form-control" id="filterItemDescription" placeholder="Search item...">
+                        <div id="itemDescriptionSuggestions" class="list-group" style="position: absolute; z-index: 1000; width: calc(100% - 24px);"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="filterVendorName" class="form-label">Vendor Name</label>
+                        <input type="text" class="form-control" id="filterVendorName" placeholder="Search vendor...">
+                        <div id="vendorNameSuggestions" class="list-group" style="position: absolute; z-index: 1000; width: calc(100% - 24px);"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterMinQty" class="form-label">Min Quantity</label>
+                        <input type="number" class="form-control" id="filterMinQty" step="any">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterMaxQty" class="form-label">Max Quantity</label>
+                        <input type="number" class="form-control" id="filterMaxQty" step="any">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterPoNo" class="form-label">PO Number</label>
+                        <input type="text" class="form-control" id="filterPoNo">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterStockinDateStart" class="form-label">Stock-in Date (Start)</label>
+                        <input type="date" class="form-control" id="filterStockinDateStart">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterStockinDateEnd" class="form-label">Stock-in Date (End)</label>
+                        <input type="date" class="form-control" id="filterStockinDateEnd">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button id="applyFiltersBtn" class="btn btn-primary me-2">Apply Filters</button>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="stockDetailsContent" class="mt-4 table-responsive">
+            <p>Loading stock details...</p>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        const stockDetailsContent = document.getElementById('stockDetailsContent');
+        const stockFormCard = document.getElementById('stockFormCard');
+        const stockEntryForm = document.getElementById('stockEntryForm');
+        const addStockBtn = document.getElementById('addStockBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const formTitle = document.getElementById('formTitle');
+        const submitButton = stockEntryForm.querySelector('button[type="submit"]');
+        const itemDescriptionDropdown = document.getElementById('item_description');
+
+        // New Item elements
+        const addItemBtn = document.getElementById('addItemBtn');
+        const addItemFormCard = document.getElementById('addItemFormCard');
+        const itemEntryForm = document.getElementById('itemEntryForm');
+        const cancelAddItemBtn = document.getElementById('cancelAddItemBtn');
+        const newItemNameInput = document.getElementById('newItemName');
+        const newItemImportNameInput = document.getElementById('newItemImportName');
+
+        let editingStockId = null;
+
+        // Filter DOM elements
+        const toggleFilterBtn = document.getElementById('toggleFilterBtn');
+        const filterPane = document.getElementById('filterPane');
+        const filterItemDescription = document.getElementById('filterItemDescription');
+        const itemDescriptionSuggestions = document.getElementById('itemDescriptionSuggestions');
+        const filterVendorName = document.getElementById('filterVendorName');
+        const vendorNameSuggestions = document.getElementById('vendorNameSuggestions');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+        let allItemDescriptions = [];
+        let allVendorNames = [];
+
+        async function fetchItemsForDropdown() {
+            const { data, error } = await supabase.from('item_details').select('item_name');
+            if (error) {
+                console.error('Error fetching items:', error);
+                return;
+            }
+            itemDescriptionDropdown.innerHTML = '<option value="">-- Select Item --</option>';
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.item_name;
+                option.textContent = item.item_name;
+                itemDescriptionDropdown.appendChild(option);
+            });
+        }
+
+        function setupAutocomplete(inputElement, suggestionsElement, sourceArray) {
+            inputElement.addEventListener('input', () => {
+                const inputValue = inputElement.value.toLowerCase();
+                suggestionsElement.innerHTML = '';
+
+                if (inputValue.length === 0) return;
+
+                const filteredSuggestions = sourceArray.filter(item => item.toLowerCase().includes(inputValue));
+
+                filteredSuggestions.slice(0, 5).forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.classList.add('list-group-item', 'list-group-item-action');
+                    div.textContent = suggestion;
+                    div.addEventListener('click', () => {
+                        inputElement.value = suggestion;
+                        suggestionsElement.innerHTML = '';
+                    });
+                    suggestionsElement.appendChild(div);
+                });
+            });
+        }
+
+        async function initializeFilters() {
+            const { data, error } = await supabase.from('stock_details').select('item_description, vendor_name');
+            if (error) {
+                console.error('Error fetching data for autocomplete:', error);
+                return;
+            }
+            allItemDescriptions = [...new Set(data.map(item => item.item_description).filter(Boolean))];
+            allVendorNames = [...new Set(data.map(item => item.vendor_name).filter(Boolean))];
+
+            setupAutocomplete(filterItemDescription, itemDescriptionSuggestions, allItemDescriptions);
+            setupAutocomplete(filterVendorName, vendorNameSuggestions, allVendorNames);
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!filterItemDescription.contains(event.target)) itemDescriptionSuggestions.innerHTML = '';
+            if (!filterVendorName.contains(event.target)) vendorNameSuggestions.innerHTML = '';
+        });
+
+        async function loadStockDetails(filters = {}) {
+            stockDetailsContent.innerHTML = `<div class="d-flex justify-content-center align-items-center p-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+            
+            let query = supabase.from('stock_details').select('*').order('timestamp', { ascending: false });
+
+            if (filters.item_description) query = query.ilike('item_description', `%${filters.item_description}%`);
+            if (filters.vendor_name) query = query.ilike('vendor_name', `%${filters.vendor_name}%`);
+            if (filters.min_qty) query = query.gte('qty', filters.min_qty);
+            if (filters.max_qty) query = query.lte('qty', filters.max_qty);
+            if (filters.po_no) query = query.eq('po_no', filters.po_no);
+            if (filters.start_date) query = query.gte('stockin_date', filters.start_date);
+            if (filters.end_date) query = query.lte('stockin_date', filters.end_date);
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error('Error fetching stock details:', error);
+                stockDetailsContent.innerHTML = '<div class="alert alert-danger">Error loading stock details.</div>';
+                return;
+            }
+
+            if (data.length === 0) {
+                stockDetailsContent.innerHTML = '<div class="alert alert-info">No stock details found matching your criteria.</div>';
+                return;
+            }
+
+            const formatDate = (dateStr) => {
+                if (!dateStr) return 'N/A';
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            };
+
+            const formatCurrency = (num) => {
+                if (typeof num !== 'number') return 'N/A';
+                return num.toLocaleString('en-IN', { style: 'currency', currency: 'PKR', minimumFractionDigits: 2 });
+            };
+
+            const tableRows = data.map(item => `
+                <tr>
+                    <td><strong>${item.item_description}</strong></td>
+                    <td>${item.qty}</td>
+                    <td>${item.uom}</td>
+                    <td class="amount-cell">${formatCurrency(item.amount)}</td>
+                    <td>${item.po_no || 'N/A'}</td>
+                    <td>${formatDate(item.po_date)}</td>
+                    <td>${formatDate(item.stockin_date)}</td>
+                    <td>${item.vendor_name || 'N/A'}</td>
+                    <td>${item.purchase_by || 'N/A'}</td>
+                    <td class="action-cell">
+                        <button class="btn btn-sm btn-info edit-btn" data-id='${item.id}'><i class="fa-solid fa-pencil"></i></button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${item.id}"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`
+            ).join('');
+
+            stockDetailsContent.innerHTML = `
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>UOM</th>
+                            <th class="text-end">Amount</th>
+                            <th>PO No.</th>
+                            <th>PO Date</th>
+                            <th>Stock-in Date</th>
+                            <th>Vendor</th>
+                            <th>Purchaser</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>`;
+            
+            document.querySelectorAll('.edit-btn').forEach(button => button.addEventListener('click', () => handleEditClick(button.dataset.id, data)));
+            document.querySelectorAll('.delete-btn').forEach(button => button.addEventListener('click', () => handleDeleteClick(button.dataset.id)));
+        }
+
+        function showForm(isEditing = false) {
+            stockFormCard.style.display = 'block';
+            addItemFormCard.style.display = 'none'; // Hide add item form
+            formTitle.textContent = isEditing ? 'Edit Stock' : 'Enter New Stock';
+            submitButton.textContent = isEditing ? 'Update Stock' : 'Add Stock';
+            if (!isEditing) {
+                stockEntryForm.reset();
+                editingStockId = null;
+            }
+        }
+
+        function hideForm() {
+            stockFormCard.style.display = 'none';
+            stockEntryForm.reset();
+            editingStockId = null;
+        }
+
+        function showAddItemForm() {
+            addItemFormCard.style.display = 'block';
+            stockFormCard.style.display = 'none'; // Hide stock form if open
+            filterPane.style.display = 'none'; // Hide filter pane if open
+            itemEntryForm.reset();
+            addItemFormCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideAddItemForm() {
+            addItemFormCard.style.display = 'none';
+            itemEntryForm.reset();
+        }
+
+        function handleEditClick(id, data) {
+            const stockItem = data.find(item => item.id == id);
+            if (!stockItem) return;
+
+            showForm(true);
+            editingStockId = id;
+
+            itemDescriptionDropdown.value = stockItem.item_description;
+            document.getElementById('uom').value = stockItem.uom;
+            document.getElementById('qty').value = stockItem.qty;
+            document.getElementById('rate').value = stockItem.rate;
+            document.getElementById('vendor_name').value = stockItem.vendor_name;
+            document.getElementById('vendor_doc').value = stockItem.vendor_doc;
+            document.getElementById('po_no').value = stockItem.po_no;
+            document.getElementById('po_date').value = stockItem.po_date;
+            document.getElementById('purchase_by').value = stockItem.purchase_by;
+            document.getElementById('req_person').value = stockItem.req_person;
+            document.getElementById('req_dept').value = stockItem.req_dept;
+            document.getElementById('remarks').value = stockItem.remarks;
+            document.getElementById('stockin_date').value = stockItem.stockin_date;
+            
+            stockFormCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function handleDeleteClick(id) {
+            if (!confirm('Are you sure you want to delete this stock item?')) return;
+
+            const { error } = await supabase.from('stock_details').delete().eq('id', id);
+
+            if (error) {
+                console.error('Error deleting stock:', error);
+                alert('Failed to delete stock item.');
+            } else {
+                alert('Stock item deleted successfully.');
+                loadStockDetails();
+            }
+        }
+
+        async function handleStockSubmit(event) {
+            event.preventDefault();
+
+            const qty = parseFloat(document.getElementById('qty').value);
+            const rate = parseFloat(document.getElementById('rate').value);
+
+            const stockData = {
+                item_description: itemDescriptionDropdown.value,
+                uom: document.getElementById('uom').value,
+                qty: qty,
+                rate: rate,
+                amount: qty * rate,
+                vendor_name: document.getElementById('vendor_name').value,
+                vendor_doc: document.getElementById('vendor_doc').value,
+                po_no: document.getElementById('po_no').value,
+                po_date: document.getElementById('po_date').value,
+                purchase_by: document.getElementById('purchase_by').value,
+                req_person: document.getElementById('req_person').value,
+                req_dept: document.getElementById('req_dept').value,
+                remarks: document.getElementById('remarks').value,
+                stockin_date: document.getElementById('stockin_date').value,
+            };
+
+            let result;
+            if (editingStockId) {
+                result = await supabase.from('stock_details').update(stockData).eq('id', editingStockId);
+            } else {
+                result = await supabase.from('stock_details').insert([stockData]);
+            }
+
+            if (result.error) {
+                console.error('Error saving stock:', result.error);
+                alert('Failed to save stock: ' + result.error.message);
+            } else {
+                alert(`Stock ${editingStockId ? 'updated' : 'added'} successfully!`);
+                hideForm();
+                loadStockDetails();
+                initializeFilters();
+            }
+        }
+
+        async function handleItemSubmit(event) {
+            event.preventDefault();
+
+            const itemName = newItemNameInput.value;
+            const itemImportName = newItemImportNameInput.value;
+
+            if (!itemName || !itemImportName) {
+                alert('Both Item Name and Item Import Name are required.');
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('item_details')
+                .insert([{ item_name: itemName, item_import_name: itemImportName }]);
+
+            if (error) {
+                console.error('Error adding new item:', error);
+                alert('Failed to add new item: ' + error.message);
+            } else {
+                alert('New item added successfully!');
+                hideAddItemForm();
+                await fetchItemsForDropdown(); // Refresh the item description dropdown
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStockDetails();
+            fetchItemsForDropdown();
+            initializeFilters();
+
+            addItemBtn.addEventListener('click', showAddItemForm);
+            cancelAddItemBtn.addEventListener('click', hideAddItemForm);
+            itemEntryForm.addEventListener('submit', handleItemSubmit);
+
+            addStockBtn.addEventListener('click', () => {
+                showForm(false);
+                hideAddItemForm(); // Ensure add item form is hidden
+            });
+            cancelBtn.addEventListener('click', hideForm);
+            stockEntryForm.addEventListener('submit', handleStockSubmit);
+
+            toggleFilterBtn.addEventListener('click', () => {
+                filterPane.style.display = (filterPane.style.display === 'none' || filterPane.style.display === '') ? 'block' : 'none';
+                hideAddItemForm(); // Ensure add item form is hidden
+                hideForm(); // Ensure add stock form is hidden
+            });
+
+            applyFiltersBtn.addEventListener('click', () => {
+                const filters = {
+                    item_description: document.getElementById('filterItemDescription').value,
+                    vendor_name: document.getElementById('filterVendorName').value,
+                    min_qty: document.getElementById('filterMinQty').value,
+                    max_qty: document.getElementById('filterMaxQty').value,
+                    po_no: document.getElementById('filterPoNo').value,
+                    start_date: document.getElementById('filterStockinDateStart').value,
+                    end_date: document.getElementById('filterStockinDateEnd').value
+                };
+                loadStockDetails(filters);
+            });
+
+            resetFiltersBtn.addEventListener('click', () => {
+                document.getElementById('filterItemDescription').value = '';
+                document.getElementById('filterVendorName').value = '';
+                document.getElementById('filterMinQty').value = '';
+                document.getElementById('filterMaxQty').value = '';
+                document.getElementById('filterPoNo').value = '';
+                document.getElementById('filterStockinDateStart').value = '';
+                document.getElementById('filterStockinDateEnd').value = '';
+                loadStockDetails();
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

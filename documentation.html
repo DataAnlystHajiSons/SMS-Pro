@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            display: flex;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            width: calc(100% - 260px);
+        }
+
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .document-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .doc-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+
+        .doc-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .doc-card h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .doc-card p {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .doc-card .btn-view {
+            width: 100%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 32px 24px;
+            border-radius: 10px;
+            min-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        #doc-viewer-modal .modal-content {
+            width: 80%;
+            height: 90%;
+            padding: 1rem;
+        }
+
+        #doc-viewer-iframe {
+            width: 100%;
+            height: calc(100% - 50px);
+            border: none;
+        }
+
+        .modal-actions {
+            margin-top: 18px;
+            text-align: right;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085; /* Darker Teal */
+            border-color: #16a085;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d; /* Darker Silver */
+            border-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html" class="active"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="doc-header">
+            <select id="site-select" class="form-select w-auto"></select>
+            <button id="upload-btn" class="btn btn-primary">Upload Documents</button>
+        </div>
+        <div id="docs-grid" class="document-grid">
+        </div>
+    </div>
+
+    <div class="modal" id="upload-modal">
+        <div class="modal-content">
+            <h3>Upload Documents</h3>
+            <form id="upload-form">
+                <div class="mb-3">
+                    <label for="boq" class="form-label">Upload BOQ</label>
+                    <input type="file" id="boq" name="boq" class="form-control" accept="application/pdf">
+                </div>
+                <div class="mb-3">
+                    <label for="work_order" class="form-label">Upload Work Order</label>
+                    <input type="file" id="work_order" name="work_order" class="form-control" accept="application/pdf">
+                </div>
+                <div class="mb-3">
+                    <label for="icr_1" class="form-label">Upload ICR-1</label>
+                    <input type="file" id="icr_1" name="icr_1" class="form-control" accept="application/pdf">
+                </div>
+                <div class="mb-3">
+                    <label for="icr_2" class="form-label">Upload ICR-2</label>
+                    <input type="file" id="icr_2" name="icr_2" class="form-control" accept="application/pdf">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="close-modal" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="doc-viewer-modal">
+        <div class="modal-content">
+            <iframe id="doc-viewer-iframe"></iframe>
+            <div class="modal-actions">
+                <button type="button" id="close-viewer-modal" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+          'https://mxktarizsqttwwzbqgld.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        let selectedSiteId = null;
+
+        async function loadSites() {
+            const { data: sites, error } = await supabase.from('site_details').select('id, site_name');
+            if (error || !sites) return;
+            const select = document.getElementById('site-select');
+            select.innerHTML = '<option value="">Select Site</option>' +
+                sites.map(site => `<option value="${site.id}">${site.site_name}</option>`).join('');
+        }
+
+        async function loadDocuments(siteId) {
+            const grid = document.getElementById('docs-grid');
+            grid.innerHTML = '';
+            if (!siteId) return;
+            const { data: docs, error } = await supabase
+                .from('documentation')
+                .select('*')
+                .eq('site_id', siteId);
+
+            if (error || !docs || docs.length === 0) {
+                grid.innerHTML = '<p>No documents uploaded for this site.</p>';
+                return;
+            }
+
+            docs.forEach(doc => {
+                const formattedDate = new Date(doc.timestamp).toLocaleString();
+                if (doc.boq_url) {
+                    grid.innerHTML += createDocCard('BOQ', formattedDate, doc.boq_url);
+                }
+                if (doc.work_order_url) {
+                    grid.innerHTML += createDocCard('Work Order', formattedDate, doc.work_order_url);
+                }
+                if (doc.icr_1_url) {
+                    grid.innerHTML += createDocCard('ICR-1', formattedDate, doc.icr_1_url);
+                }
+                if (doc.icr_2_url) {
+                    grid.innerHTML += createDocCard('ICR-2', formattedDate, doc.icr_2_url);
+                }
+            });
+        }
+
+        function createDocCard(title, date, url) {
+            return `
+                <div class="doc-card">
+                    <h4>${title}</h4>
+                    <p>Uploaded: ${date}</p>
+                    <button class="btn btn-primary btn-view" onclick="openDocument('${url}')">View</button>
+                </div>
+            `;
+        }
+
+        function openDocument(url) {
+            const modal = document.getElementById('doc-viewer-modal');
+            const iframe = document.getElementById('doc-viewer-iframe');
+            iframe.src = url;
+            modal.style.display = 'flex';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadSites();
+            document.getElementById('site-select').onchange = function() {
+                selectedSiteId = this.value;
+                loadDocuments(selectedSiteId);
+            };
+            document.getElementById('upload-btn').onclick = function() {
+                if (!selectedSiteId) {
+                    alert('Please select a site first.');
+                    return;
+                }
+                document.getElementById('upload-modal').style.display = 'flex';
+            };
+            document.getElementById('close-modal').onclick = function() {
+                document.getElementById('upload-modal').style.display = 'none';
+                document.getElementById('upload-form').reset();
+            };
+            document.getElementById('close-viewer-modal').onclick = function() {
+                document.getElementById('doc-viewer-modal').style.display = 'none';
+                document.getElementById('doc-viewer-iframe').src = '';
+            };
+            
+            document.getElementById('upload-form').onsubmit = async function(e) {
+                e.preventDefault();
+                if (!selectedSiteId) {
+                    alert('Please select a site first.');
+                    return;
+                }
+                const form = e.target;
+                const files = {
+                    boq_url: form.boq.files[0],
+                    work_order_url: form.work_order.files[0],
+                    icr_1_url: form.icr_1.files[0],
+                    icr_2_url: form.icr_2.files[0]
+                };
+                let urls = {};
+
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    alert('User not authenticated. Please log in.');
+                    return;
+                }
+
+                for (const key in files) {
+                    if (files[key]) {
+                        const uploadPath = `${user.id}/${selectedSiteId}/${key}_${Date.now()}`;
+                        const { data, error } = await supabase.storage
+                            .from('documents')
+                            .upload(uploadPath, files[key]);
+                        if (error) {
+                            alert('Upload failed for ' + key + ': ' + error.message);
+                            return;
+                        }
+                        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(data.path);
+                        urls[key] = publicUrl;
+                    }
+                }
+
+                const { error: insertError } = await supabase.from('documentation').insert([{
+                    site_id: selectedSiteId,
+                    ...urls
+                }]);
+
+                if (insertError) {
+                    alert('Failed to save document URLs: ' + insertError.message);
+                    return;
+                }
+
+                document.getElementById('upload-modal').style.display = 'none';
+                form.reset();
+                loadDocuments(selectedSiteId);
+            };
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

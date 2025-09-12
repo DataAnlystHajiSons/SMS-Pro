@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survey Responses - HS Priat Software</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth-guard.js" defer></script>
+  <style>
+    :root {
+        --primary-color: #1abc9c; /* Bright Teal */
+        --secondary-color: #95a5a6; /* Cool Silver */
+        --sidebar-bg: #34495e;    /* Wet Asphalt */
+        --body-bg: #ecf0f1;       /* Clouds */
+        --card-bg: #ffffff;
+        --font-family: 'Poppins', sans-serif;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: var(--font-family);
+        background-color: var(--body-bg);
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Desktop Layout */
+    @media (min-width: 992px) {
+        body {
+            height: 100vh;
+            overflow: hidden;
+        }
+    }
+
+    .sidebar {
+        background-color: var(--sidebar-bg);
+        color: white;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        box-sizing: border-box; /* Include padding in width calculation */
+    }
+
+    /* Mobile Sidebar */
+    @media (max-width: 991px) {
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100vh;
+            z-index: 1050;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1040;
+            display: none;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+
+    /* Desktop Sidebar */
+    @media (min-width: 992px) {
+        .sidebar {
+            width: 260px !important;
+            min-width: 260px !important;
+            max-width: 260px !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+    }
+
+    .sidebar .logo {
+        font-size: 1.6rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .sidebar .subtitle {
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #adb5bd;
+    }
+
+    .sidebar .menu a {
+        color: #dee2e6;
+        text-decoration: none;
+        padding: 12px 15px;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        transition: background-color 0.3s, color 0.3s;
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden; /* Hide overflow if any */
+        text-overflow: ellipsis; /* Add ellipsis for very long text */
+        font-size: 0.9rem; /* Slightly smaller font to fit better */
+        width: 100%; /* Ensure full width */
+        box-sizing: border-box;
+    }
+
+    .sidebar .menu a i {
+        margin-right: 10px; /* Reduced margin for better fit */
+        width: 18px; /* Slightly smaller icon width */
+        text-align: center;
+        flex-shrink: 0; /* Prevent icon from shrinking */
+    }
+
+    .sidebar .menu a span {
+        flex: 1; /* Allow text to take remaining space */
+        min-width: 0; /* Allow text to shrink if needed */
+    }
+
+    .sidebar .menu a:hover, .sidebar .menu a.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .main-content {
+        padding: 20px;
+        overflow-y: auto;
+        min-height: 100vh;
+    }
+
+    /* Desktop main content */
+    @media (min-width: 992px) {
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            height: 100vh;
+            width: calc(100vw - 260px); /* Ensure it takes exactly the remaining space */
+            box-sizing: border-box;
+            position: relative; /* Ensure proper positioning */
+        }
+    }
+
+    /* Mobile main content */
+    @media (max-width: 991px) {
+        .main-content {
+            margin-left: 0;
+            padding: 15px;
+            padding-top: 70px; /* Space for mobile header */
+        }
+    }
+    
+    .table th {
+        cursor: pointer;
+    }
+    
+    .table th:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+        background-color: #16a085; /* Darker Teal */
+        border-color: #16a085;
+    }
+
+    /* Mobile Header */
+    .mobile-header {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background-color: var(--sidebar-bg);
+        color: white;
+        z-index: 1030;
+        padding: 0 15px;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 991px) {
+        .mobile-header {
+            display: flex;
+        }
+    }
+
+    .mobile-menu-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .mobile-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    /* Responsive table */
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.5rem 0.25rem;
+            white-space: nowrap;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Filter section responsive */
+    @media (max-width: 768px) {
+        .row .col-md-4 {
+            margin-bottom: 1rem;
+        }
+
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .d-flex.justify-content-between .btn {
+            width: 100%;
+        }
+
+        /* Make cards more compact on mobile */
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Better spacing for mobile */
+        .main-content h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Improve modal on mobile */
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+
+        /* Better button groups on mobile */
+        .btn-group .btn-sm {
+            padding: 0.25rem 0.4rem;
+        }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 576px) {
+        .main-content {
+            padding: 10px;
+            padding-top: 70px;
+        }
+
+        .table-responsive {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: nowrap;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Header -->
+  <div class="mobile-header">
+    <button class="mobile-menu-btn" onclick="toggleSidebar()">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="mobile-title">Survey Responses</div>
+    <div></div> <!-- Spacer for flexbox -->
+  </div>
+
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <div class="sidebar" id="sidebar">
+      <h1 class="logo">SMS Pro</h1>
+      <p class="subtitle">Site Management Suite</p>
+      <nav class="menu">
+            <a href="manager-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="expense-form-manager.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="attendance.html"><i class="fa-solid fa-user-check"></i> <span>Attendance</span></a>
+            <a href="survey-form-new.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+            <a href="survey-responses.html" class="active"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+  </div>
+
+  <div class="main-content">
+    <h1>Survey Responses</h1>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+            <i class="fa-solid fa-filter"></i> Filters
+        </button>
+        <button id="exportCsvBtn" class="btn btn-success">
+            <i class="fa-solid fa-file-csv"></i> <span class="d-none d-sm-inline">Export to </span>CSV
+        </button>
+    </div>
+
+    <div class="collapse" id="filtersCollapse">
+        <div class="card card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="startDate" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="startDate">
+                </div>
+                <div class="col-md-4">
+                    <label for="endDate" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+                <div class="col-md-4" id="submitterFilterContainer">
+                    <label for="submitterFilter" class="form-label">Submitter</label>
+                    <select class="form-select" id="submitterFilter">
+                        <option value="">All Users</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button id="applyFiltersBtn" class="btn btn-primary">Apply</button>
+                <button id="resetFiltersBtn" class="btn btn-secondary">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive mt-3">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th data-sort="farmer_name" style="min-width: 150px;">Farmer Name</th>
+                    <th data-sort="contact_number" style="min-width: 120px;">Contact</th>
+                    <th data-sort="cnic" style="min-width: 120px;">CNIC</th>
+                    <th data-sort="district" style="min-width: 100px;">District</th>
+                    <th data-sort="users.full_name" style="min-width: 120px;">Submitter</th>
+                    <th data-sort="submitted_at" style="min-width: 140px;">Submitted</th>
+                    <th style="min-width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="responsesTableBody">
+            </tbody>
+        </table>
+    </div>
+  </div>
+  
+    <!-- View Details Modal -->
+    <div class="modal fade" id="viewDetailsModal" tabindex="-1" aria-labelledby="viewDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="viewDetailsModalLabel">Survey Response Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="viewDetailsModalBody">
+            <!-- Details will be loaded here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crop Details Modal -->
+    <div class="modal fade" id="cropDetailsModal" tabindex="-1" aria-labelledby="cropDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="cropDetailsModalLabel">Crop Details</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="cropDetailsModalBody">
+            <!-- Crop details will be loaded here -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div class="modal fade" id="imageViewerModal" tabindex="-1" aria-labelledby="imageViewerModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="imageViewerModalLabel">Document Viewer</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center" id="imageViewerModalBody">
+            <img src="" class="img-fluid" alt="Document">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const { createClient } = supabase;
+
+    const supabaseClient = createClient(
+      'https://mxktarizsqttwwzbqgld.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+    );
+
+    const responsesTableBody = document.getElementById('responsesTableBody');
+    const viewDetailsModalBody = document.getElementById('viewDetailsModalBody');
+    const viewDetailsModal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    const cropDetailsModalBody = document.getElementById('cropDetailsModalBody');
+    const cropDetailsModal = new bootstrap.Modal(document.getElementById('cropDetailsModal'));
+    const submitterFilterContainer = document.getElementById('submitterFilterContainer');
+    const submitterFilter = document.getElementById('submitterFilter');
+
+    let currentSort = {
+        column: 'submitted_at',
+        order: 'desc'
+    };
+    let currentUser = null;
+    let allResponses = [];
+
+    // Debug function to test database connection
+    async function testDatabaseConnection() {
+        console.log('Testing database connection...');
+
+        try {
+            // Test survey_forms table
+            const { data: surveyData, error: surveyError, count: surveyCount } = await supabaseClient
+                .from('survey_forms')
+                .select('*', { count: 'exact', head: true });
+
+            console.log('Survey forms count:', surveyCount, 'Error:', surveyError);
+
+            // Test users table
+            const { data: usersData, error: usersError, count: usersCount } = await supabaseClient
+                .from('users')
+                .select('*', { count: 'exact', head: true });
+
+            console.log('Users count:', usersCount, 'Error:', usersError);
+
+            // Test auth user
+            const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+            console.log('Current auth user:', user?.email, 'Error:', authError);
+
+            // Test actual survey data
+            const { data: sampleSurveys, error: sampleError } = await supabaseClient
+                .from('survey_forms')
+                .select('id, farmer_name, user_id')
+                .limit(3);
+
+            console.log('Sample survey data:', sampleSurveys, 'Error:', sampleError);
+
+        } catch (err) {
+            console.error('Database connection test failed:', err);
+        }
+    }
+
+    async function fetchUserAndUsers() {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+            try {
+                const { data, error } = await supabaseClient.from('users').select('role, full_name').eq('id', user.id).single();
+                if (data && !error) {
+                    currentUser = { ...user, role: data.role, full_name: data.full_name };
+                    console.log('Current user loaded:', currentUser);
+                } else {
+                    console.warn('User not found in users table, defaulting to Admin role');
+                    currentUser = { ...user, role: 'Admin', full_name: user.email };
+                }
+            } catch (err) {
+                console.warn('Error fetching user role:', err);
+                currentUser = { ...user, role: 'Admin', full_name: user.email };
+            }
+        }
+
+        if (currentUser && currentUser.role === 'Admin') {
+            submitterFilterContainer.style.display = 'block';
+            try {
+                const { data: users, error } = await supabaseClient.from('users').select('id, full_name, email');
+                if (users && !error) {
+                    submitterFilter.innerHTML = '<option value="">All Users</option>';
+                    users.forEach(u => {
+                        const option = document.createElement('option');
+                        option.value = u.id;
+                        option.textContent = u.full_name || u.email || u.id;
+                        submitterFilter.appendChild(option);
+                    });
+                    console.log('Loaded users for filter:', users.length);
+                } else {
+                    console.warn('Could not load users for filter:', error);
+                    submitterFilter.innerHTML = '<option value="">All Users</option>';
+                }
+            } catch (err) {
+                console.warn('Could not load users for filter:', err);
+                submitterFilter.innerHTML = '<option value="">All Users</option>';
+            }
+        } else {
+            submitterFilterContainer.style.display = 'none';
+        }
+    }
+
+    async function fetchResponses(filters = {}) {
+        await fetchUserAndUsers();
+
+        // First, try to fetch survey forms with user data
+        let query = supabaseClient.from('survey_forms').select(`
+            *,
+            crop_1 (*),
+            crop_2 (*),
+            crop_3 (*)
+        `);
+
+        if (filters.startDate) query = query.gte('submitted_at', filters.startDate);
+        if (filters.endDate) query = query.lte('submitted_at', filters.endDate);
+        if (filters.submitter) query = query.eq('user_id', filters.submitter);
+
+        if (currentUser && currentUser.role !== 'Admin') {
+            query = query.eq('user_id', currentUser.id);
+        }
+
+        query = query.order(currentSort.column, { ascending: currentSort.order === 'asc' });
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Error fetching responses:', error);
+            responsesTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error fetching data: ' + error.message + '</td></tr>';
+            return;
+        }
+
+        // Fetch user data separately if needed
+        if (data && data.length > 0) {
+            const userIds = [...new Set(data.map(item => item.user_id).filter(Boolean))];
+            let userMap = {};
+
+            if (userIds.length > 0) {
+                try {
+                    const { data: usersData, error: usersError } = await supabaseClient
+                        .from('users')
+                        .select('id, full_name, email')
+                        .in('id', userIds);
+
+                    if (!usersError && usersData) {
+                        userMap = usersData.reduce((acc, user) => {
+                            acc[user.id] = user;
+                            return acc;
+                        }, {});
+                        console.log('Fetched user data for responses:', userMap);
+                    } else {
+                        console.warn('Could not fetch user data:', usersError);
+                    }
+                } catch (userFetchError) {
+                    console.warn('Could not fetch user data:', userFetchError);
+                }
+            }
+
+            // Attach user data to responses
+            data.forEach(response => {
+                response.users = userMap[response.user_id] || null;
+            });
+        }
+
+        allResponses = data || [];
+        renderTable(data || []);
+    }
+
+    function renderTable(data) {
+        responsesTableBody.innerHTML = '';
+
+        console.log('Rendering table with data:', data); // Debug log
+
+        if (!data || data.length === 0) {
+            responsesTableBody.innerHTML = '<tr><td colspan="7" class="text-center">No responses found.</td></tr>';
+            return;
+        }
+
+        data.forEach(response => {
+            const row = document.createElement('tr');
+            row.dataset.id = response.id;
+
+            // Safe access to user data
+            const submitterName = response.users?.full_name ||
+                                 response.users?.email ||
+                                 'Unknown User';
+
+            row.innerHTML = `
+                <td>${response.farmer_name || 'N/A'}</td>
+                <td>${response.contact_number || 'N/A'}</td>
+                <td>${response.cnic || 'N/A'}</td>
+                <td>${response.district || 'N/A'}</td>
+                <td>${submitterName}</td>
+                <td>${response.submitted_at ? new Date(response.submitted_at).toLocaleString() : 'N/A'}</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-success" onclick="viewCropDetails('${response.id}')" title="View Crops">
+                            <i class="fa-solid fa-seedling"></i>
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="viewDetails('${response.id}')" title="View Details">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="editResponse('${response.id}')" title="Edit">
+                            <i class="fa-solid fa-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteResponse('${response.id}')" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            responsesTableBody.appendChild(row);
+        });
+    }
+    
+    function viewCropDetails(id) {
+        const response = allResponses.find(r => r.id === id);
+        if (!response) return;
+
+        let cropHtml = '<div class="row">';
+
+        ['crop_1', 'crop_2', 'crop_3'].forEach((cropKey, index) => {
+            const crop = response[cropKey];
+            const cropNumber = index + 1;
+
+            cropHtml += `<div class="col-md-4 mb-3">`;
+            cropHtml += `<div class="card h-100">`;
+            cropHtml += `<div class="card-header bg-primary text-white">`;
+            cropHtml += `<h6 class="mb-0"><i class="fa-solid fa-seedling me-2"></i>Crop ${cropNumber}</h6>`;
+            cropHtml += `</div>`;
+            cropHtml += `<div class="card-body">`;
+
+            if (crop && crop.crop_name) {
+                cropHtml += `
+                    <p><strong>Name:</strong> ${crop.crop_name}</p>
+                    <p><strong>System Type:</strong> ${crop.system_type}</p>
+                    <p><strong>Spacing (R×R):</strong> ${crop.spacing_rxr}</p>
+                    <p><strong>Spacing (P×P):</strong> ${crop.spacing_pxp}</p>
+                    <p><strong>Submitted:</strong> ${crop.submitted_at ? new Date(crop.submitted_at).toLocaleString() : 'N/A'}</p>
+                `;
+            } else {
+                cropHtml += `<p class="text-muted"><i class="fa-solid fa-info-circle me-1"></i>No crop data available</p>`;
+            }
+
+            cropHtml += `</div></div></div>`;
+        });
+
+        cropHtml += '</div>';
+
+        // Add farmer info at the top
+        const farmerInfo = `
+            <div class="alert alert-info mb-3">
+                <h6><i class="fa-solid fa-user me-2"></i>Farmer: ${response.farmer_name}</h6>
+                <p class="mb-0">Contact: ${response.contact_number} | District: ${response.district}</p>
+            </div>
+        `;
+
+        cropDetailsModalBody.innerHTML = farmerInfo + cropHtml;
+        cropDetailsModal.show();
+    }
+
+    async function viewDetails(id) {
+        const response = allResponses.find(r => r.id === id);
+        if (!response) return;
+
+        let detailsHtml = '<dl class="row">';
+        for (const key in response) {
+            if (key !== 'users' && key !== 'crop_1' && key !== 'crop_2' && key !== 'crop_3') {
+                detailsHtml += `<dt class="col-sm-3">${key.replace(/_/g, ' ')}</dt>`;
+                if (key === 'cnic_url' && response[key]) {
+                    detailsHtml += `<dd class="col-sm-9"><button class="btn btn-sm btn-info" onclick="showImageModal('${response[key]}')">View Document</button></dd>`;
+                } else {
+                    detailsHtml += `<dd class="col-sm-9">${response[key]}</dd>`;
+                }
+            }
+        }
+        detailsHtml += '</dl>';
+        viewDetailsModalBody.innerHTML = detailsHtml;
+        viewDetailsModal.show();
+    }
+
+    function showImageModal(imageUrl) {
+        const imageViewerModalBody = document.getElementById('imageViewerModalBody');
+        imageViewerModalBody.querySelector('img').src = imageUrl;
+        const imageViewerModal = new bootstrap.Modal(document.getElementById('imageViewerModal'));
+        imageViewerModal.show();
+    }
+
+    function editResponse(id) {
+        window.location.href = `survey-form-new.html?id=${id}`;
+    }
+
+    async function deleteResponse(id) {
+        if (confirm('Are you sure you want to delete this response?')) {
+            const { error } = await supabaseClient.from('survey_forms').delete().eq('id', id);
+            if (error) {
+                alert('Failed to delete response.');
+            } else {
+                alert('Response deleted successfully.');
+                fetchResponses();
+            }
+        }
+    }
+    
+    function sortTable(column) {
+        if (currentSort.column === column) {
+            currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = column;
+            currentSort.order = 'asc';
+        }
+        fetchResponses();
+    }
+
+    function exportToCsv() {
+        const headers = [
+            'Farmer Name', 'Contact Number', 'CNIC', 'SDO', 'City', 'Tehsil', 'District',
+            'Scheme Type', 'Location', 'Address', 'Power Source', 'Water Source',
+            'Water Table Depth', 'Farmer Interested', 'Remarks/Comments', 'Submitter', 'Submitted At',
+            'Crop 1 Name', 'Crop 1 System', 'Crop 1 Spacing RxR', 'Crop 1 Spacing PxP', 'Crop 1 Submitted',
+            'Crop 2 Name', 'Crop 2 System', 'Crop 2 Spacing RxR', 'Crop 2 Spacing PxP', 'Crop 2 Submitted',
+            'Crop 3 Name', 'Crop 3 System', 'Crop 3 Spacing RxR', 'Crop 3 Spacing PxP', 'Crop 3 Submitted'
+        ];
+
+        const rows = allResponses.map(response => {
+            const crop1 = response.crop_1 || {};
+            const crop2 = response.crop_2 || {};
+            const crop3 = response.crop_3 || {};
+            return [
+                response.farmer_name || '',
+                response.contact_number || '',
+                response.cnic || '',
+                response.sdo || '',
+                response.city || '',
+                response.tehsil || '',
+                response.district || '',
+                response.scheme_type || '',
+                response.location || '',
+                response.address || '',
+                response.power_source || '',
+                response.water_source || '',
+                response.water_table_depth || '',
+                response.is_farmer_interested ? 'Yes' : 'No',
+                response.remarks_comments || '',
+                response.users?.full_name || response.users?.email || 'N/A',
+                response.submitted_at ? new Date(response.submitted_at).toLocaleString() : '',
+                crop1.crop_name || '',
+                crop1.system_type || '',
+                crop1.spacing_rxr || '',
+                crop1.spacing_pxp || '',
+                crop1.submitted_at ? new Date(crop1.submitted_at).toLocaleString() : '',
+                crop2.crop_name || '',
+                crop2.system_type || '',
+                crop2.spacing_rxr || '',
+                crop2.spacing_pxp || '',
+                crop2.submitted_at ? new Date(crop2.submitted_at).toLocaleString() : '',
+                crop3.crop_name || '',
+                crop3.system_type || '',
+                crop3.spacing_rxr || '',
+                crop3.spacing_pxp || '',
+                crop3.submitted_at ? new Date(crop3.submitted_at).toLocaleString() : ''
+            ].map(field => `"${String(field).replace(/"/g, '""')}"`);
+        });
+
+        let csvContent = "data:text/csv;charset=utf-8,"
+            + headers.join(",") + "\n"
+            + rows.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "survey_responses.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Survey Responses page loaded, initializing...');
+
+        // Add loading indicator
+        responsesTableBody.innerHTML = '<tr><td colspan="7" class="text-center"><i class="fa-solid fa-spinner fa-spin"></i> Loading responses...</td></tr>';
+
+        // Test database connection first
+        testDatabaseConnection();
+
+        fetchResponses();
+
+        document.querySelectorAll('th[data-sort]').forEach(header => {
+            header.addEventListener('click', () => {
+                sortTable(header.dataset.sort);
+            });
+        });
+
+        document.getElementById('applyFiltersBtn').addEventListener('click', () => {
+            const filters = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                submitter: document.getElementById('submitterFilter').value
+            };
+            console.log('Applying filters:', filters);
+            fetchResponses(filters);
+        });
+
+        document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('submitterFilter').value = '';
+            console.log('Filters reset');
+            fetchResponses();
+        });
+
+        document.getElementById('exportCsvBtn').addEventListener('click', exportToCsv);
+    });
+
+    // Mobile Navigation Functions
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    function closeSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+
+        sidebar.classList.remove('show');
+        overlay.classList.remove('show');
+    }
+
+    // Close sidebar when clicking on menu items (mobile)
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuLinks = document.querySelectorAll('.sidebar .menu a');
+        menuLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 991) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Close sidebar on window resize if mobile
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 991) {
+                closeSidebar();
+            }
+        });
+    });
+  </script>
+</body>
+</html>

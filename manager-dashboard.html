@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="auth-guard.js" defer></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            margin: 0;
+        }
+
+        .sidebar {
+            width: fit-content;
+            min-width: 260px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            white-space: nowrap;
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            flex-grow: 1;
+            padding: 30px;
+            width: calc(100% - 280px);
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .kpi-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease-in-out;
+            border: 1px solid #e0e0e0;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .kpi-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        /* Button Overrides */
+        #logout-btn,
+        #logout-btn:focus {
+            background-color: #e74c3c;
+            border-color: #e74c3c;
+            box-shadow: none;
+        }
+
+        #logout-btn:hover {
+            background-color: #c0392b;
+            border-color: #c0392b;
+        }
+
+        .card-container {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 40px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th, .table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        /* Hamburger menu icon */
+        .menu-toggle {
+            display: none; /* Hidden by default on desktop */
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001; /* Above sidebar */
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        /* Media Query for Mobile Devices */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column; /* Stack content vertically */
+                height: auto; /* Allow body to grow */
+                min-height: 100vh; /* Ensure it's at least viewport height */
+            }
+
+            .menu-toggle {
+                display: block; /* Show hamburger menu on mobile */
+            }
+
+            .sidebar {
+                left: -260px; /* Hide sidebar by default */
+                transition: left 0.3s ease-in-out;
+                z-index: 1000;
+                width: 260px; /* Fixed width when hidden */
+            }
+
+            .sidebar.active {
+                left: 0; /* Show sidebar */
+            }
+
+            .main-content {
+                margin-left: 0; /* No margin on mobile */
+                width: 100%; /* Full width */
+                padding: 15px; /* Adjust padding for mobile */
+            }
+
+            /* Hide main content when sidebar is active to prevent interaction */
+            body.sidebar-open .main-content {
+                pointer-events: none;
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="main-sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="manager-dashboard.html" class="active"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="expense-form-manager.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="attendance.html"><i class="fa-solid fa-user-check"></i> <span>Attendance</span></a>
+            <a href="survey-form-new.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Manager Dashboard</h1>
+            <div>
+                <span>Welcome! <span id="manager-name">Manager</span></span>
+                <button id="logout-btn" class="btn btn-danger ms-3"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </div>
+
+        <div class="kpi-cards">
+            <div class="kpi-card">
+                <div class="kpi-title">Total Sites Supervised</div>
+                <div class="kpi-value" id="kpi-total-sites">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Total Supervised Expense</div>
+                <div class="kpi-value" id="kpi-total-expense">PKR 0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Total Received Payments</div>
+                <div class="kpi-value" id="kpi-total-payments">PKR 0</div>
+            </div>
+        </div>
+
+        <div id="expense-breakdown" class="card-container">
+            <h2>Expense Breakdown by Site</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Site Name</th>
+                        <th>Expense Head</th>
+                        <th>Total Expense</th>
+                    </tr>
+                </thead>
+                <tbody id="expense-table-body">
+                    <!-- Rows will be inserted here dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- You can add more manager-specific content here -->
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        // --- Security Check ---
+        async function checkAuthAndRedirect() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                // No session, redirect to login
+                window.location.href = 'login.html';
+            } else {
+                // Optionally, check user role if this page is role-specific
+                // For manager-dashboard, we might want to ensure the user is a 'Manager'
+                const { data: userMeta, error: metaError } = await supabase
+                    .from('users') // Assuming you have a 'users' table with roles
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (metaError || !userMeta || userMeta.role !== 'Manager') {
+                    // Not authorized or role mismatch, redirect to login
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        // Call the security check immediately
+        checkAuthAndRedirect();
+
+        async function loadManagerName() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const name = user.user_metadata?.display_name || user.user_metadata?.full_name || user.email || 'Manager';
+                document.getElementById('manager-name').textContent = name;
+                loadKpis(name);
+            } else {
+                 document.getElementById('manager-name').textContent = 'Manager';
+                 loadKpis(null);
+            }
+        }
+
+        async function loadKpis(managerName) {
+            const kpiTotalSitesEl = document.getElementById('kpi-total-sites');
+            const kpiTotalExpenseEl = document.getElementById('kpi-total-expense');
+            const kpiTotalPaymentsEl = document.getElementById('kpi-total-payments');
+
+            if (!managerName) {
+                kpiTotalSitesEl.textContent = '0';
+                kpiTotalExpenseEl.textContent = 'PKR 0';
+                kpiTotalPaymentsEl.textContent = 'PKR 0';
+                return;
+            }
+
+            // 1. Get supervised sites (ID, name, and count)
+            const { data: supervisedSites, error: sitesError, count } = await supabase
+                .from('site_details')
+                .select('id, site_name', { count: 'exact' })
+                .eq('site_supervisor', managerName);
+
+            if (sitesError) {
+                console.error('Error fetching supervised sites:', sitesError);
+                kpiTotalSitesEl.textContent = 'Error';
+                kpiTotalExpenseEl.textContent = 'Error';
+                kpiTotalPaymentsEl.textContent = 'Error';
+                return;
+            }
+
+            kpiTotalSitesEl.textContent = count || 0;
+
+            if (!supervisedSites || supervisedSites.length === 0) {
+                kpiTotalExpenseEl.textContent = 'PKR 0';
+                kpiTotalPaymentsEl.textContent = 'PKR 0';
+                return; // No sites, so no expenses or payments
+            }
+
+            const siteNames = supervisedSites.map(s => s.site_name);
+            const siteIds = supervisedSites.map(s => s.id);
+
+            // 2. Run expense and payment queries in parallel
+            const [expenseResult, paymentResult, expenseBreakdownResult] = await Promise.all([
+                supabase.from('expense_entries').select('amount').in('site', siteNames),
+                supabase.from('payment_details').select('amount').in('site_id', siteIds),
+                supabase.from('expense_entries').select('site, amount, expense_type').in('site', siteNames)
+            ]);
+
+            // 3. Process and display expense KPI
+            const { data: expenses, error: expenseError } = expenseResult;
+            if (expenseError) {
+                console.error('Error fetching expenses:', expenseError);
+                kpiTotalExpenseEl.textContent = 'Error';
+            } else {
+                const totalExpense = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+                kpiTotalExpenseEl.textContent = totalExpense.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+            }
+
+            // 4. Process and display payment KPI
+            const { data: payments, error: paymentError } = paymentResult;
+            if (paymentError) {
+                console.error('Error fetching payments:', paymentError);
+                kpiTotalPaymentsEl.textContent = 'Error';
+            } else {
+                const totalPayments = payments.reduce((sum, payment) => sum + (parseFloat(payment.amount) || 0), 0);
+                kpiTotalPaymentsEl.textContent = totalPayments.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+            }
+
+            // 5. Process and display expense breakdown
+            const { data: expenseBreakdown, error: expenseBreakdownError } = expenseBreakdownResult;
+            if (expenseBreakdownError) {
+                console.error('Error fetching expense breakdown:', expenseBreakdownError);
+            } else {
+                renderExpenseBreakdown(expenseBreakdown);
+            }
+        }
+
+        function renderExpenseBreakdown(expenses) {
+            const tableBody = document.getElementById('expense-table-body');
+            if (!expenses || !tableBody) return;
+
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            const expensesBySite = expenses.reduce((acc, expense) => {
+                if (!acc[expense.site]) {
+                    acc[expense.site] = [];
+                }
+                acc[expense.site].push(expense);
+                return acc;
+            }, {});
+
+            for (const site in expensesBySite) {
+                const siteExpenses = expensesBySite[site];
+                const siteRow = document.createElement('tr');
+                const siteCell = document.createElement('td');
+                siteCell.textContent = site;
+                siteCell.colSpan = "3";
+                siteCell.style.fontWeight = "bold";
+                siteCell.style.backgroundColor = "#f0f0f0";
+                siteRow.appendChild(siteCell);
+                tableBody.appendChild(siteRow);
+
+                const expensesByHead = siteExpenses.reduce((acc, expense) => {
+                    if (!acc[expense.expense_type]) {
+                        acc[expense.expense_type] = 0;
+                    }
+                    acc[expense.expense_type] += expense.amount || 0;
+                    return acc;
+                }, {});
+
+                for (const head in expensesByHead) {
+                    const row = document.createElement('tr');
+                    const siteCell = document.createElement('td');
+                    const headCell = document.createElement('td');
+                    const expenseCell = document.createElement('td');
+
+                    siteCell.textContent = ''; // No need to repeat site name
+                    headCell.textContent = head;
+                    expenseCell.textContent = expensesByHead[head].toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+
+                    row.appendChild(siteCell);
+                    row.appendChild(headCell);
+                    row.appendChild(expenseCell);
+                    tableBody.appendChild(row);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadManagerName();
+
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await supabase.auth.signOut();
+                window.location.href = "login.html";
+            });
+
+            // Add this to the DOMContentLoaded listener
+            const menuToggle = document.createElement('div');
+            menuToggle.className = 'menu-toggle';
+            menuToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+            document.body.prepend(menuToggle); // Add to the beginning of body
+
+            menuToggle.addEventListener('click', () => {
+                const sidebar = document.querySelector('.sidebar');
+                sidebar.classList.toggle('active');
+                document.body.classList.toggle('sidebar-open'); // Add class to body
+            });
+        });
+    </script>
+</body>
+</html>

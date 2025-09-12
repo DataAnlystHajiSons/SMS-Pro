@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            /* Removed display: flex; from body as sidebar is fixed */
+            /* Removed height: 100vh; from body */
+        }
+
+        .sidebar {
+            width: fit-content;
+            min-width: 260px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            white-space: nowrap;
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 280px; /* Increased space for gap */
+            padding: 30px;
+            flex-grow: 1;
+            width: calc(100% - 280px); /* Adjusted width for gap */
+            overflow-y: auto;
+        }
+
+        .header-section {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .header-section h1 {
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Hamburger menu icon */
+        .menu-toggle {
+            display: none; /* Hidden by default on desktop */
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001; /* Above sidebar */
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        /* Media Query for Mobile Devices */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column; /* Stack content vertically */
+                height: auto; /* Allow body to grow */
+                min-height: 100vh; /* Ensure it's at least viewport height */
+            }
+
+            .menu-toggle {
+                display: block; /* Show hamburger menu on mobile */
+            }
+
+            .sidebar {
+                left: -260px; /* Hide sidebar by default */
+                transition: left 0.3s ease-in-out;
+                z-index: 1000;
+                width: 260px; /* Fixed width when hidden */
+            }
+
+            .sidebar.active {
+                left: 0; /* Show sidebar */
+            }
+
+            .main-content {
+                margin-left: 0; /* No margin on mobile */
+                width: 100%; /* Full width */
+                padding: 15px; /* Adjust padding for mobile */
+            }
+
+            /* Hide main content when sidebar is active to prevent interaction */
+            body.sidebar-open .main-content {
+                pointer-events: none;
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="manager-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="expense-form-manager.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="attendance.html" class="active"><i class="fa-solid fa-user-check"></i> <span>Attendance</span></a>
+            <a href="survey-form-new.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header-section">
+            <h1>Manager Attendance Tracking</h1>
+        </div>
+
+        <div id="authMessage" class="message error"></div>
+
+        <div id="attendanceApp" style="display: none;">
+            <div class="form-group">
+                <label for="siteSelect">Select Site:</label>
+                <select id="siteSelect"></select>
+            </div>
+
+            <div id="locationInfo" class="message info">
+                <p>Getting your location...</p>
+            </div>
+
+            <div id="statusMessage" class="message"></div>
+
+            <div class="form-group">
+                <button id="checkInBtn" class="btn btn-primary" disabled>Check-in</button>
+                <button id="checkOutBtn" class="btn btn-secondary" disabled>Check-out</button>
+            </div>
+
+            <h2>Your Attendance History</h2>
+            <table id="attendanceHistoryTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Site</th>
+                        <th>Check Type</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                        <th>Distance (m)</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceHistoryTableBody">
+                    <tr><td colspan="6">No attendance records found.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://mxktarizsqttwwzbqgld.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const RADIUS_THRESHOLD = 100; // meters
+
+        // DOM Elements
+        const authMessage = document.getElementById('authMessage');
+        const attendanceApp = document.getElementById('attendanceApp');
+        const siteSelect = document.getElementById('siteSelect');
+        const locationInfo = document.getElementById('locationInfo');
+        const statusMessage = document.getElementById('statusMessage');
+        const checkInBtn = document.getElementById('checkInBtn');
+        const checkOutBtn = document.getElementById('checkOutBtn');
+        const attendanceHistoryTableBody = document.getElementById('attendanceHistoryTableBody');
+
+        let currentUser = null;
+        let currentUserRole = null;
+        let currentLatitude = null;
+        let currentLongitude = null;
+        let selectedSiteData = null; // Stores id, name, lat, lon of selected site
+
+        // --- Utility Functions ---
+        function showMessage(element, msg, type) {
+            element.textContent = msg;
+            element.className = `message ${type}`;
+            element.style.display = 'block';
+        }
+
+        function hideMessage(element) {
+            element.style.display = 'none';
+        }
+
+        // Haversine formula to calculate distance between two lat/lon points in meters
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // metres
+            const φ1 = lat1 * Math.PI / 180; // φ, λ in radians
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            const d = R * c; // in metres
+            return d;
+        }
+
+        // --- Authentication and Authorization ---
+        async function checkAuthAndRole() {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+            if (sessionError || !session) {
+                showMessage(authMessage, 'You are not logged in. Redirecting to login...', 'error');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+                return false;
+            }
+
+            currentUser = session.user;
+            const { data: userMeta, error: metaError } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (metaError || !userMeta || userMeta.role !== 'Manager') {
+                showMessage(authMessage, 'Access Denied: Only Managers can access this page. Redirecting to login...', 'error');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+                return false;
+            }
+
+            currentUserRole = userMeta.role;
+            hideMessage(authMessage);
+            attendanceApp.style.display = 'block';
+            return true;
+        }
+
+        // --- Geolocation ---
+        let watchId = null; // To store the watchPosition ID
+
+        function getUserLocation() {
+            if (!navigator.geolocation) {
+                showMessage(locationInfo, 'Geolocation is not supported by your browser.', 'error');
+                return;
+            }
+            showMessage(locationInfo, 'Getting your current location...', 'info');
+
+            // Clear any existing watcher to prevent multiple watchers
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    currentLatitude = position.coords.latitude;
+                    currentLongitude = position.coords.longitude;
+                    hideMessage(locationInfo);
+                    // Update UI whenever location changes
+                    updateAttendanceUI();
+                },
+                (error) => {
+                    console.error('Geolocation error:', error);
+                    let errorMessage = 'Unable to retrieve your location.';
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMessage += ' Please allow location access in your browser settings.';
+                    }
+                    showMessage(locationInfo, errorMessage, 'error');
+                    // Disable buttons if location cannot be obtained
+                    checkInBtn.disabled = true;
+                    checkOutBtn.disabled = true;
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        // --- Site Data ---
+        async function fetchSites() {
+            const { data, error } = await supabase
+                .from('site_details') // Corrected table name
+                .select('id, site_name, latitude, longitude');
+
+            if (error) {
+                console.error('Error loading sites:', error);
+                showMessage(statusMessage, 'Error loading sites. Please try again.', 'error');
+                return;
+            }
+
+            siteSelect.innerHTML = '<option value="">-- Select a Site --</option>';
+            data.forEach(site => {
+                const option = document.createElement('option');
+                option.value = site.id;
+                option.textContent = site.site_name;
+                option.dataset.latitude = site.latitude;
+                option.dataset.longitude = site.longitude;
+                siteSelect.appendChild(option);
+            });
+        }
+
+        // --- UI Update Logic ---
+        async function updateAttendanceUI() {
+            hideMessage(statusMessage);
+            checkInBtn.disabled = true;
+            checkOutBtn.disabled = true;
+
+            if (!currentLatitude || !currentLongitude) {
+                showMessage(statusMessage, 'Your location is not available. Please ensure location services are enabled.', 'info');
+                return;
+            }
+
+            const selectedOption = siteSelect.options[siteSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                showMessage(statusMessage, 'Please select a site to mark attendance.', 'info');
+                return;
+            }
+
+            selectedSiteData = {
+                id: selectedOption.value,
+                site_name: selectedOption.textContent,
+                latitude: parseFloat(selectedOption.dataset.latitude),
+                longitude: parseFloat(selectedOption.dataset.longitude)
+            };
+
+            if (isNaN(selectedSiteData.latitude) || isNaN(selectedSiteData.longitude)) {
+                showMessage(statusMessage, 'Selected site has invalid coordinates. Cannot check distance.', 'error');
+                return;
+            }
+
+            // Temporary swap for site coordinates for testing purposes
+            const tempLat = selectedSiteData.latitude;
+            selectedSiteData.latitude = selectedSiteData.longitude;
+            selectedSiteData.longitude = tempLat;
+
+            console.log('User Location (final):', currentLatitude, currentLongitude);
+            console.log('Site Location (final, after temp swap):', selectedSiteData.latitude, selectedSiteData.longitude);
+
+            const distance = calculateDistance(
+                currentLatitude, currentLongitude,
+                selectedSiteData.latitude, selectedSiteData.longitude
+            );
+
+            locationInfo.innerHTML = `
+                <p>Your Location: Lat ${currentLatitude.toFixed(5)}, Lon ${currentLongitude.toFixed(5)}</p>
+                <p>Distance to ${selectedSiteData.site_name}: ${distance.toFixed(2)} meters</p>
+            `;
+            locationInfo.className = 'message info';
+            locationInfo.style.display = 'block';
+
+            if (distance <= RADIUS_THRESHOLD) {
+                showMessage(statusMessage, `You are within ${RADIUS_THRESHOLD} meters of ${selectedSiteData.site_name}. You can mark attendance.`, 'success');
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = false;
+            } else {
+                showMessage(statusMessage, `You are ${distance.toFixed(2)} meters away from ${selectedSiteData.site_name}. You must be within ${RADIUS_THRESHOLD} meters to mark attendance.`, 'error');
+            }
+        }
+
+        // --- Attendance Marking ---
+        async function markAttendance(checkType) {
+            if (!currentUser || !selectedSiteData || !currentLatitude || !currentLongitude) {
+                showMessage(statusMessage, 'Error: Missing user, site, or location data.', 'error');
+                return;
+            }
+
+            const attendanceDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const timestamp = new Date().toISOString();
+            const distance = calculateDistance(
+                currentLatitude, currentLongitude,
+                selectedSiteData.latitude, selectedSiteData.longitude
+            );
+            const status = distance <= RADIUS_THRESHOLD ? 'Present' : 'Outside Radius';
+
+            // Check if already checked in/out for today
+            const { data: existingEntry, error: existingError } = await supabase
+                .from('attendance')
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .eq('attendance_date', attendanceDate)
+                .eq('check_type', checkType)
+                .single();
+
+            if (existingEntry) {
+                showMessage(statusMessage, `You have already ${checkType} for ${selectedSiteData.site_name} today.`, 'info');
+                return;
+            }
+
+            const { error } = await supabase.from('attendance').insert({
+                user_id: currentUser.id,
+                site_id: selectedSiteData.id,
+                check_type: checkType,
+                status: status,
+                timestamp: timestamp,
+                attendance_date: attendanceDate,
+                latitude: currentLatitude,
+                longitude: currentLongitude,
+                distance_m: parseFloat(distance.toFixed(2)),
+                // device_info: '...', // Optional
+                // ip_address: '...', // Optional
+            });
+
+            if (error) {
+                console.error('Error marking attendance:', error);
+                showMessage(statusMessage, `Failed to ${checkType}: ${error.message}`, 'error');
+            } else {
+                showMessage(statusMessage, `Successfully ${checkType} at ${selectedSiteData.site_name}! Status: ${status}`, 'success');
+                loadAttendanceHistory(); // Refresh history
+            }
+        }
+
+        // --- Load Attendance History ---
+        async function loadAttendanceHistory() {
+            if (!currentUser) return; // Wait for user to be authenticated
+
+            attendanceHistoryTableBody.innerHTML = '<tr><td colspan="6">Loading history...</td></tr>';
+
+            const { data, error } = await supabase
+                .from('attendance')
+                .select('*, site_details(site_name)') // Select site_name from site_details table
+                .eq('user_id', currentUser.id)
+                .order('timestamp', { ascending: false });
+
+            if (error) {
+                console.error('Error loading attendance history:', error);
+                attendanceHistoryTableBody.innerHTML = '<tr><td colspan="6">Error loading history.</td></tr>';
+                return;
+            }
+
+            if (data.length === 0) {
+                attendanceHistoryTableBody.innerHTML = '<tr><td colspan="6">No attendance records found.</td></tr>';
+                return;
+            }
+
+            attendanceHistoryTableBody.innerHTML = '';
+            data.forEach(record => {
+                const row = attendanceHistoryTableBody.insertRow();
+                row.insertCell().textContent = new Date(record.attendance_date).toLocaleDateString();
+                row.insertCell().textContent = record.site_details.site_name; // Access site_name from joined table
+                row.insertCell().textContent = record.check_type;
+                row.insertCell().textContent = record.status;
+                row.insertCell().textContent = new Date(record.timestamp).toLocaleString();
+                row.insertCell().textContent = record.distance_m ? `${record.distance_m} m` : 'N/A';
+            });
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAuthenticated = await checkAuthAndRole();
+            if (!isAuthenticated) return;
+
+            await fetchSites();
+            await getUserLocation();
+            loadAttendanceHistory(); // Load history initially
+
+            siteSelect.addEventListener('change', updateAttendanceUI);
+            checkInBtn.addEventListener('click', () => markAttendance('check-in'));
+            checkOutBtn.addEventListener('click', () => markAttendance('check-out'));
+
+            // Re-evaluate UI if location or site changes
+            if (currentLatitude && currentLongitude) {
+                updateAttendanceUI();
+            }
+        });
+
+        // Add this to the DOMContentLoaded listener
+        const menuToggle = document.createElement('div');
+        menuToggle.className = 'menu-toggle';
+        menuToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        document.body.prepend(menuToggle); // Add to the beginning of body
+
+        menuToggle.addEventListener('click', () => {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+            document.body.classList.toggle('sidebar-open'); // Add class to body
+        });
+    </script>
+</body>
+</html>

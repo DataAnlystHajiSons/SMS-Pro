@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Form - SMS Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    
+    <style>
+        :root {
+            --primary-color: #1abc9c;
+            --secondary-color: #95a5a6;
+            --sidebar-bg: #34495e;
+            --body-bg: #ecf0f1;
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Desktop Layout */
+        @media (min-width: 992px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+
+        .sidebar {
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+        }
+
+        /* Mobile Sidebar */
+        @media (max-width: 991px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 280px;
+                height: 100vh;
+                z-index: 1050;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 1040;
+                display: none;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+
+        /* Desktop Sidebar */
+        @media (min-width: 992px) {
+            .sidebar {
+                width: 260px;
+                min-width: 260px;
+                max-width: 260px;
+            }
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.9rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 10px;
+            width: 18px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar .menu a span {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        /* Desktop main content */
+        @media (min-width: 992px) {
+            .main-content {
+                margin-left: 260px;
+                padding: 20px;
+                height: 100vh;
+                box-sizing: border-box;
+                position: relative;
+            }
+        }
+
+        /* Mobile main content */
+        @media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+                padding-top: 70px;
+            }
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            z-index: 1030;
+            padding: 0 15px;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 991px) {
+            .mobile-header {
+                display: flex;
+            }
+        }
+
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .mobile-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        /* Mobile Header Adjustments */
+        @media (max-width: 991px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Desktop Header */
+        @media (min-width: 992px) {
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .header h1 {
+            font-weight: 600;
+            margin: 0;
+            color: var(--sidebar-bg);
+        }
+
+        /* Mobile Header Title */
+        @media (max-width: 991px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Desktop Header Title */
+        @media (min-width: 992px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 25px;
+        }
+
+        /* Mobile Card Adjustments */
+        @media (max-width: 767px) {
+            .card {
+                border-radius: 10px;
+                margin-bottom: 20px;
+            }
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #16a085);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+
+        /* Mobile Card Header */
+        @media (max-width: 767px) {
+            .card-header {
+                padding: 15px 20px;
+                border-radius: 10px 10px 0 0 !important;
+            }
+        }
+
+        /* Desktop Card Header */
+        @media (min-width: 768px) {
+            .card-header {
+                padding: 20px;
+            }
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        /* Mobile Card Header Title */
+        @media (max-width: 767px) {
+            .card-header h5 {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Desktop Card Header Title */
+        @media (min-width: 768px) {
+            .card-header h5 {
+                font-size: 1.2rem;
+            }
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        /* Mobile Card Body */
+        @media (max-width: 767px) {
+            .card-body {
+                padding: 20px 15px;
+            }
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--sidebar-bg);
+            margin-bottom: 8px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        /* Mobile Form Controls */
+        @media (max-width: 767px) {
+            .form-control, .form-select {
+                padding: 14px 15px;
+                font-size: 16px;
+            }
+        }
+
+        /* Desktop Form Controls */
+        @media (min-width: 768px) {
+            .form-control, .form-select {
+                padding: 12px 15px;
+            }
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(26, 188, 156, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #16a085);
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+
+
+        /* Status indicators */
+        .status-success { color: #28a745 !important; }
+        .status-error { color: #dc3545 !important; }
+        .status-loading { color: #17a2b8 !important; }
+
+        .success-message {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        #toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 1060;
+            display: none;
+            min-width: 300px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body>
+    <div id="toast"></div>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div>
+            <h5 class="mb-0 text-primary fw-bold">SMS Pro</h5>
+            <small class="text-muted">Site Management Suite</small>
+        </div>
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="manager-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="expense-form-manager.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="attendance.html"><i class="fa-solid fa-user-check"></i> <span>Attendance</span></a>
+            <a href="survey-form-new.html" class="active"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1><i class="fa-solid fa-clipboard-list me-3"></i>Farmer Survey Form</h1>
+            <div>
+                <button type="button" class="btn btn-secondary me-2" onclick="resetForm()">
+                    <i class="fa-solid fa-refresh me-2"></i>Reset Form
+                </button>
+            </div>
+        </div>
+
+        <div class="success-message" id="successMessage">
+            <i class="fa-solid fa-check-circle me-2"></i>Survey submitted successfully!
+        </div>
+
+        <form id="surveyForm">
+            <!-- Bio Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fa-solid fa-user me-2"></i>Farmer Bio Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="farmerName" class="form-label">Farmer Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="farmerName" name="farmerName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="contactNumber" class="form-label">Contact Number <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="contactNumber" name="contactNumber" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cnic" class="form-label">CNIC <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="cnic" name="cnic" placeholder="00000-0000000-0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cnic_picture" class="form-label">CNIC Picture <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control" id="cnic_picture" name="cnic_picture" accept="image/*" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="sdo" class="form-label">S/O W/O D/O <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="sdo" name="sdo" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="district" class="form-label">District <span class="text-danger">*</span></label>
+                            <select class="form-select" id="district" name="district" required>
+                                <option value="">Select District</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="tehsil" class="form-label">Tehsil <span class="text-danger">*</span></label>
+                            <select class="form-select" id="tehsil" name="tehsil" required disabled>
+                                <option value="">Select Tehsil</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Simple Location Section -->
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="location" name="location" placeholder="Click 'Get Location' to capture coordinates" required readonly>
+                            <button type="button" class="btn btn-primary" id="getLocationBtn" onclick="getLocation()">
+                                <i class="fa-solid fa-location-dot me-1"></i>Get Location
+                            </button>
+                        </div>
+                        <small class="text-muted mt-1 d-block" id="locationStatus">
+                            <i class="fa-solid fa-info-circle me-1"></i>Click "Get Location" and allow browser access to capture your current coordinates. Or click "Test" to debug.
+                        </small>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="enableManualLocation()">
+                                <i class="fa-solid fa-edit me-1"></i>Enter Manually
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hidden fields for coordinates -->
+                    <input type="hidden" id="latitude" name="latitude">
+                    <input type="hidden" id="longitude" name="longitude">
+                </div>
+            </div>
+
+            <!-- Crop Sections -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fa-solid fa-seedling me-2"></i>Crop Information</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Crop 1 -->
+                    <h6 class="text-primary mb-3"><i class="fa-solid fa-leaf me-2"></i>Crop 1</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="crop1Name" class="form-label">Crop Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="crop1Name" name="crop1Name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop1SystemType" class="form-label">System Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="crop1SystemType" name="crop1SystemType" required>
+                                <option value="">Select System Type</option>
+                                <option value="Drip">Drip</option>
+                                <option value="Sprinkler">Sprinkler</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop1SpacingRxR" class="form-label">Spacing R x R (feet) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="crop1SpacingRxR" name="crop1SpacingRxR" placeholder="e.g., 2 x 2" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop1SpacingPxP" class="form-label">Spacing P x P (feet) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="crop1SpacingPxP" name="crop1SpacingPxP" placeholder="e.g., 1 x 1" required>
+                        </div>
+                    </div>
+
+                    <!-- Crop 2 -->
+                    <h6 class="text-primary mb-3"><i class="fa-solid fa-leaf me-2"></i>Crop 2</h6>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="crop2Name" class="form-label">Crop Name</label>
+                            <input type="text" class="form-control" id="crop2Name" name="crop2Name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop2SystemType" class="form-label">System Type</label>
+                            <select class="form-select" id="crop2SystemType" name="crop2SystemType">
+                                <option value="">Select System Type</option>
+                                <option value="Drip">Drip</option>
+                                <option value="Sprinkler">Sprinkler</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop2SpacingRxR" class="form-label">Spacing R x R (feet)</label>
+                            <input type="text" class="form-control" id="crop2SpacingRxR" name="crop2SpacingRxR" placeholder="e.g., 2 x 2">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop2SpacingPxP" class="form-label">Spacing P x P (feet)</label>
+                            <input type="text" class="form-control" id="crop2SpacingPxP" name="crop2SpacingPxP" placeholder="e.g., 1 x 1">
+                        </div>
+                    </div>
+
+                    <!-- Crop 3 -->
+                    <h6 class="text-primary mb-3"><i class="fa-solid fa-leaf me-2"></i>Crop 3</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="crop3Name" class="form-label">Crop Name</label>
+                            <input type="text" class="form-control" id="crop3Name" name="crop3Name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop3SystemType" class="form-label">System Type</label>
+                            <select class="form-select" id="crop3SystemType" name="crop3SystemType">
+                                <option value="">Select System Type</option>
+                                <option value="Drip">Drip</option>
+                                <option value="Sprinkler">Sprinkler</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop3SpacingRxR" class="form-label">Spacing R x R (feet)</label>
+                            <input type="text" class="form-control" id="crop3SpacingRxR" name="crop3SpacingRxR" placeholder="e.g., 2 x 2">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="crop3SpacingPxP" class="form-label">Spacing P x P (feet)</label>
+                            <input type="text" class="form-control" id="crop3SpacingPxP" name="crop3SpacingPxP" placeholder="e.g., 1 x 1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other Details Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fa-solid fa-cogs me-2"></i>Other Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="powerSource" class="form-label">Power Source <span class="text-danger">*</span></label>
+                            <select class="form-select" id="powerSource" name="powerSource" required>
+                                <option value="">Select Power Source</option>
+                                <option value="Solar">Solar</option>
+                                <option value="Electricity">Electricity</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="waterSource" class="form-label">Water Source <span class="text-danger">*</span></label>
+                            <select class="form-select" id="waterSource" name="waterSource" required>
+                                <option value="">Select Water Source</option>
+                                <option value="Direct Suction">Direct Suction</option>
+                                <option value="Pond">Pond</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="waterTableDepth" class="form-label">Water Table Depth (feet)</label>
+                            <input type="number" class="form-control" id="waterTableDepth" name="waterTableDepth" min="0" step="0.1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Is Farmer Interested? <span class="text-danger">*</span></label>
+                            <div class="mt-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="farmerInterested" id="interestedYes" value="true" required>
+                                    <label class="form-check-label" for="interestedYes">
+                                        <i class="fa-solid fa-check-circle text-success me-1"></i>Yes
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="farmerInterested" id="interestedNo" value="false" required>
+                                    <label class="form-check-label" for="interestedNo">
+                                        <i class="fa-solid fa-times-circle text-danger me-1"></i>No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="remarks" class="form-label">Remarks/Comments</label>
+                        <textarea class="form-control" id="remarks" name="remarks" rows="4" placeholder="Any additional comments or observations..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fa-solid fa-paper-plane me-2"></i>Submit Survey
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <button type="button" class="btn btn-secondary btn-lg w-100" onclick="resetForm()">
+                                <i class="fa-solid fa-refresh me-2"></i>Reset Form
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://mxktarizsqttwwzbqgld.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let editMode = false;
+        let surveyId = null;
+
+        let watchId = null;
+        let bestPosition = null;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 5000);
+        }
+
+        function startWatchingLocation() {
+            const statusEl = document.getElementById('locationStatus');
+            if (!navigator.geolocation) {
+                statusEl.innerHTML = '<i class="fa-solid fa-exclamation-triangle text-danger me-1"></i>Geolocation is not supported by this browser.';
+                return;
+            }
+
+            statusEl.innerHTML = '<i class="fa-solid fa-satellite-dish text-info me-1"></i>Acquiring location... please wait.';
+
+            watchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+                        bestPosition = position;
+                    }
+
+                    const accuracy = position.coords.accuracy;
+                    let accuracyText = accuracy < 20 ? 'High' : accuracy < 100 ? 'Medium' : 'Low';
+                    statusEl.innerHTML = `<i class="fa-solid fa-check-circle text-success me-1"></i>Location available. Current accuracy: ±${Math.round(accuracy)}m (${accuracyText})`;
+                },
+                function(error) {
+                    let errorMsg = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = 'Location access denied. Please enable location in your browser settings and try again.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'GPS unavailable. Please ensure you have a clear view of the sky and try outdoors.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'Location request timed out. Please try again.';
+                            break;
+                        default:
+                            errorMsg = 'Unknown location error occurred.';
+                    }
+                    statusEl.innerHTML = `<i class="fa-solid fa-exclamation-triangle text-danger me-1"></i>${errorMsg}`;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 30000, // 30 seconds
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function getLocation() {
+            if (bestPosition) {
+                const lat = bestPosition.coords.latitude;
+                const lng = bestPosition.coords.longitude;
+                document.getElementById('location').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                document.getElementById('latitude').value = lat.toFixed(8);
+                document.getElementById('longitude').value = lng.toFixed(8);
+                showToast('Location captured with the best available accuracy.');
+            } else {
+                showToast('Location not available yet. Please wait a moment and try again.');
+            }
+        }
+
+        function stopWatchingLocation() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+
+        // Enable manual location entry
+        function enableManualLocation() {
+            const locationInput = document.getElementById('location');
+            const statusEl = document.getElementById('locationStatus');
+
+            locationInput.removeAttribute('readonly');
+            locationInput.placeholder = 'Enter coordinates manually (e.g., 31.5204, 74.3587)';
+            locationInput.focus();
+
+            statusEl.innerHTML = '<i class="fa-solid fa-edit text-info me-1"></i>Manual entry enabled. Enter coordinates as: latitude, longitude';
+        }
+
+        // Form submission handler
+        document.getElementById('surveyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Submitting...';
+            submitBtn.disabled = true;
+
+            try {
+                const formData = new FormData(e.target);
+
+                // Get current user (you may need to implement proper auth)
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                const userId = user?.id || null;
+
+                const cnicFile = formData.get('cnic_picture');
+                let cnicUrl = null;
+
+                if (cnicFile && cnicFile.size > 0) {
+                    const cnicFileName = `${Date.now()}-${cnicFile.name}`;
+                    const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                        .from('documents')
+                        .upload(cnicFileName, cnicFile);
+
+                    if (uploadError) {
+                        throw uploadError;
+                    }
+
+                    const { data: urlData } = supabaseClient.storage
+                        .from('documents')
+                        .getPublicUrl(cnicFileName);
+
+                    cnicUrl = urlData.publicUrl;
+                } else if (!editMode) {
+                    throw new Error('CNIC picture is required.');
+                }
+
+                const districtSelect = document.getElementById('district');
+                const selectedDistrictName = districtSelect.options[districtSelect.selectedIndex].textContent;
+
+                // Prepare main survey data
+                const surveyData = {
+                    user_id: userId,
+                    farmer_name: formData.get('farmerName') || null,
+                    contact_number: formData.get('contactNumber') || null,
+                    cnic: formData.get('cnic') || null,
+                    sdo: formData.get('sdo') || null,
+                    tehsil: formData.get('tehsil') || null,
+                    district: selectedDistrictName,
+                    scheme_type: formData.get('schemeType') || null,
+                    location: formData.get('location') || null,
+                    address: formData.get('address') || null,
+                    power_source: formData.get('powerSource') || null,
+                    water_source: formData.get('waterSource') || null,
+                    water_table_depth: formData.get('waterTableDepth') ? parseFloat(formData.get('waterTableDepth')) : null,
+                    is_farmer_interested: formData.get('farmerInterested') === 'true',
+                    remarks_comments: formData.get('remarks') || null
+                };
+
+                if (cnicUrl) {
+                    surveyData.cnic_url = cnicUrl;
+                }
+
+                if (editMode) {
+                    // Update existing survey
+                    const { error: updateError } = await supabaseClient
+                        .from('survey_forms')
+                        .update(surveyData)
+                        .eq('id', surveyId);
+
+                    if (updateError) throw updateError;
+
+                } else {
+                    // Insert new survey
+                    const { data: surveyResult, error: surveyError } = await supabaseClient
+                        .from('survey_forms')
+                        .insert([surveyData])
+                        .select('id')
+                        .single();
+
+                    if (surveyError) throw surveyError;
+                    surveyId = surveyResult.id;
+                }
+
+                // Prepare and upsert crop data
+                const crops = [
+                    { table: 'crop_1', data: { crop_name: formData.get('crop1Name'), spacing_rxr: formData.get('crop1SpacingRxR'), spacing_pxp: formData.get('crop1SpacingPxP'), system_type: formData.get('crop1SystemType') } },
+                    { table: 'crop_2', data: { crop_name: formData.get('crop2Name'), spacing_rxr: formData.get('crop2SpacingRxR'), spacing_pxp: formData.get('crop2SpacingPxP'), system_type: formData.get('crop2SystemType') } },
+                    { table: 'crop_3', data: { crop_name: formData.get('crop3Name'), spacing_rxr: formData.get('crop3SpacingRxR'), spacing_pxp: formData.get('crop3SpacingPxP'), system_type: formData.get('crop3SystemType') } }
+                ];
+
+                for (const crop of crops) {
+                    if (crop.data.crop_name.trim()) {
+                        const { error: cropError } = await supabaseClient
+                            .from(crop.table)
+                            .upsert({ survey_forms_id: surveyId, user_id: userId, ...crop.data }, { onConflict: 'survey_forms_id' });
+
+                        if (cropError) console.error(`Error upserting ${crop.table}:`, cropError);
+                    }
+                }
+
+                showToast(editMode ? 'Survey updated successfully!' : 'Survey submitted successfully!');
+                if (!editMode) e.target.reset();
+
+            } catch (error) {
+                console.error('Error submitting survey:', error);
+                alert('Error submitting survey: ' + (error.message || 'Please try again.'));
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Reset form function
+        function resetForm() {
+            if (confirm('Are you sure you want to reset the form? All data will be lost.')) {
+                document.getElementById('surveyForm').reset();
+                document.getElementById('successMessage').style.display = 'none';
+
+                // Reset location fields
+                document.getElementById('location').value = '';
+                document.getElementById('latitude').value = '';
+                document.getElementById('longitude').value = '';
+                document.getElementById('locationStatus').innerHTML = '<i class="fa-solid fa-info-circle me-1"></i>Click "Get Location" and allow browser access to capture your current coordinates.';
+
+                // Reset location button
+                const locationBtn = document.getElementById('getLocationBtn');
+                locationBtn.innerHTML = '<i class="fa-solid fa-location-dot me-1"></i>Get Location';
+                locationBtn.disabled = false;
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Mobile Navigation Functions
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        }
+
+        async function loadSurveyForEdit(id) {
+            const { data, error } = await supabaseClient
+                .from('survey_forms')
+                .select(`
+                    *,
+                    crop_1 (*),
+                    crop_2 (*),
+                    crop_3 (*)
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) {
+                console.error('Error fetching survey for edit:', error);
+                alert('Failed to load survey data for editing.');
+                return;
+            }
+
+            if (data) {
+                // Populate form fields
+                document.getElementById('farmerName').value = data.farmer_name || '';
+                document.getElementById('contactNumber').value = data.contact_number || '';
+                document.getElementById('cnic').value = data.cnic || '';
+                document.getElementById('sdo').value = data.sdo || '';
+                document.getElementById('address').value = data.address || '';
+                document.getElementById('location').value = data.location || '';
+                document.getElementById('powerSource').value = data.power_source || '';
+                document.getElementById('waterSource').value = data.water_source || '';
+                document.getElementById('waterTableDepth').value = data.water_table_depth || '';
+                document.querySelector(`input[name="farmerInterested"][value="${data.is_farmer_interested}"]`).checked = true;
+                document.getElementById('remarks').value = data.remarks_comments || '';
+
+                // Handle CNIC picture
+                if (data.cnic_url) {
+                    const cnicField = document.getElementById('cnic_picture');
+                    const cnicLink = document.createElement('a');
+                    cnicLink.href = data.cnic_url;
+                    cnicLink.textContent = 'View Existing CNIC Picture';
+                    cnicLink.target = '_blank';
+                    cnicField.parentElement.appendChild(cnicLink);
+                    cnicField.required = false;
+                }
+
+                // Populate crop info
+                if(data.crop_1) {
+                    document.getElementById('crop1Name').value = data.crop_1.crop_name || '';
+                    document.getElementById('crop1SystemType').value = data.crop_1.system_type || '';
+                    document.getElementById('crop1SpacingRxR').value = data.crop_1.spacing_rxr || '';
+                    document.getElementById('crop1SpacingPxP').value = data.crop_1.spacing_pxp || '';
+                }
+                if(data.crop_2) {
+                    document.getElementById('crop2Name').value = data.crop_2.crop_name || '';
+                    document.getElementById('crop2SystemType').value = data.crop_2.system_type || '';
+                    document.getElementById('crop2SpacingRxR').value = data.crop_2.spacing_rxr || '';
+                    document.getElementById('crop2SpacingPxP').value = data.crop_2.spacing_pxp || '';
+                }
+                if(data.crop_3) {
+                    document.getElementById('crop3Name').value = data.crop_3.crop_name || '';
+                    document.getElementById('crop3SystemType').value = data.crop_3.system_type || '';
+                    document.getElementById('crop3SpacingRxR').value = data.crop_3.spacing_rxr || '';
+                    document.getElementById('crop3SpacingPxP').value = data.crop_3.spacing_pxp || '';
+                }
+
+                // Handle district and tehsil dropdowns
+                await loadDistricts(); // Make sure districts are loaded
+                const districtSelect = document.getElementById('district');
+                const districtOption = Array.from(districtSelect.options).find(opt => opt.textContent === data.district);
+                if (districtOption) {
+                    districtOption.selected = true;
+                    await loadTehsils(districtOption.value); // Load tehsils for this district
+                    const tehsilSelect = document.getElementById('tehsil');
+                    const tehsilOption = Array.from(tehsilSelect.options).find(opt => opt.textContent === data.tehsil);
+                    if (tehsilOption) {
+                        tehsilOption.selected = true;
+                    }
+                }
+            }
+        }
+
+        // Function to load districts
+        async function loadDistricts() {
+            const districtSelect = document.getElementById('district');
+            const { data, error } = await supabaseClient
+                .from('district')
+                .select('id, district_name')
+                .order('district_name');
+
+            if (error) {
+                console.error('Error fetching districts:', error);
+                return;
+            }
+
+            data.forEach(district => {
+                const option = document.createElement('option');
+                option.value = district.id;
+                option.textContent = district.district_name;
+                districtSelect.appendChild(option);
+            });
+        }
+
+        // Function to load tehsils based on district
+        async function loadTehsils(districtId) {
+            const tehsilSelect = document.getElementById('tehsil');
+            tehsilSelect.innerHTML = '<option value="">Select Tehsil</option>'; // Clear existing options
+            tehsilSelect.disabled = true;
+
+            if (!districtId) {
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('tehsil')
+                .select('tehsil_name')
+                .eq('district_id', districtId)
+                .order('tehsil_name');
+
+            if (error) {
+                console.error('Error fetching tehsils:', error);
+                return;
+            }
+
+            data.forEach(tehsil => {
+                const option = document.createElement('option');
+                option.value = tehsil.tehsil_name;
+                option.textContent = tehsil.tehsil_name;
+                tehsilSelect.appendChild(option);
+            });
+
+            tehsilSelect.disabled = false;
+        }
+
+        // Event listener for district dropdown
+        document.getElementById('district').addEventListener('change', function(e) {
+            const districtId = e.target.value;
+            loadTehsils(districtId);
+        });
+
+        // CNIC formatting
+        document.getElementById('cnic').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 5) {
+                value = value.substring(0, 5) + '-' + value.substring(5);
+            }
+            if (value.length >= 13) {
+                value = value.substring(0, 13) + '-' + value.substring(13, 14);
+            }
+            e.target.value = value;
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            surveyId = urlParams.get('id');
+
+            if (surveyId) {
+                editMode = true;
+                document.querySelector('h1').innerHTML = '<i class="fa-solid fa-edit me-3"></i>Edit Farmer Survey';
+                document.querySelector('button[type="submit"]').innerHTML = '<i class="fa-solid fa-save me-2"></i>Update Survey';
+                loadSurveyForEdit(surveyId);
+            } else {
+                startWatchingLocation();
+                loadDistricts();
+            }
+
+            // Close sidebar when clicking on menu items (mobile)
+            const menuLinks = document.querySelectorAll('.sidebar .menu a');
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 991) {
+                        closeSidebar();
+                    }
+                });
+            });
+
+            // Close sidebar on window resize if mobile
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 991) {
+                    closeSidebar();
+                }
+            });
+
+            window.addEventListener('beforeunload', stopWatchingLocation);
+        });
+    </script>
+</body>
+</html>

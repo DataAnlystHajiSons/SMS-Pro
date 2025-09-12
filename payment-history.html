@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ecf0f1; /* Clouds */
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            color: #34495e;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #1abc9c;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .table th, .table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #5f6368;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .filter-section label {
+            font-weight: 500;
+            color: #34495e;
+        }
+        .filter-section select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            font-size: 1rem;
+            min-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Payment History</h1>
+
+        <div class="filter-section">
+            <label for="supervisorFilter">Filter by Supervisor:</label>
+            <select id="supervisorFilter" class="form-select">
+                <option value="">All Supervisors</option>
+            </select>
+        </div>
+
+        <div class="table-container">
+            <h2>Site-wise Payments Totals</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Site Name</th>
+                        <th>Total Payments</th>
+                        <th>Total Budget</th>
+                        <th>Total Expense</th>
+                        <th>Total Budget - Total Expense</th>
+                        <th>Total Payments - Total Expense</th>
+                    </tr>
+                </thead>
+                <tbody id="siteTotalsTableBody">
+                    <!-- Data will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <h2>Supervisor-wise Payment Totals</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Supervisor Name</th>
+                        <th>Total Payments</th>
+                        <th>Total Expense</th>
+                        <th>Remaining Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="supervisorTotalsTableBody">
+                    <!-- Data will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://mxktarizsqttwwzbqgld.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        // --- Security Check ---
+        async function checkAuthAndRedirect() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+            } else {
+                const { data: userMeta, error: metaError } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (metaError || !userMeta || (userMeta.role !== 'Admin' && userMeta.role !== 'Manager')) {
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        // Call the security check immediately
+        checkAuthAndRedirect();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await populateSupervisorFilter(); // New function to populate the filter
+            await loadSiteTotals();
+            await loadSupervisorTotals();
+        });
+
+        // New function to populate the supervisor filter dropdown
+        async function populateSupervisorFilter() {
+            const supervisorFilter = document.getElementById('supervisorFilter');
+            try {
+                const { data, error } = await supabase
+                    .from('site_details')
+                    .select('site_supervisor');
+
+                if (error) throw error;
+
+                const supervisors = [...new Set(data.map(s => s.site_supervisor).filter(Boolean))]; // Get unique, non-null supervisors
+                supervisors.sort(); // Sort alphabetically
+
+                supervisorFilter.innerHTML = '<option value="">All Supervisors</option>'; // Default option
+                supervisors.forEach(supervisor => {
+                    const option = document.createElement('option');
+                    option.value = supervisor;
+                    option.textContent = supervisor;
+                    supervisorFilter.appendChild(option);
+                });
+
+                supervisorFilter.addEventListener('change', () => {
+                    const selectedSupervisor = supervisorFilter.value;
+                    loadSiteTotals(selectedSupervisor);
+                    loadSupervisorTotals(selectedSupervisor);
+                });
+
+            } catch (error) {
+                console.error('Error populating supervisor filter:', error);
+            }
+        }
+
+        async function loadSiteTotals(filterSupervisor = null) { // Added filterSupervisor parameter
+            const tableBody = document.getElementById('siteTotalsTableBody');
+            tableBody.innerHTML = '<tr><td colspan="6">Loading data...</td></tr>';
+
+            try {
+                let query = supabase.from('site_details').select('id, site_name');
+                if (filterSupervisor) {
+                    query = query.eq('site_supervisor', filterSupervisor);
+                }
+                const { data: sites, error: sitesError } = await query;
+
+                if (sitesError) throw sitesError;
+                if (!sites || sites.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6">No sites found.</td></tr>';
+                    return;
+                }
+
+                const siteDataPromises = sites.map(async (site) => {
+                    // Fetch total payments for the site
+                    const { data: payments, error: paymentsError } = await supabase
+                        .from('payment_details')
+                        .select('amount')
+                        .eq('site_id', site.id);
+                    if (paymentsError) console.error(`Error fetching payments for ${site.site_name}:`, paymentsError);
+                    const totalPayments = payments ? payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0) : 0;
+
+                    // Fetch total budget for the site (Service Charges only)
+                    const { data: budget, error: budgetError } = await supabase
+                        .from('budget_details')
+                        .select('total') // Select 'total' column
+                        .eq('site_id', site.id)
+                        .eq('item_type', 'Service Charges'); // Filter by item_type 'Service Charges'
+                    if (budgetError) console.error(`Error fetching budget for ${site.site_name}:`, budgetError);
+                    // Sum the 'total' for all matching rows
+                    const totalBudget = budget ? budget.reduce((sum, b) => sum + parseFloat(b.total || 0), 0) : 0;
+
+                    // Fetch total expense for the site
+                    const { data: expenses, error: expensesError } = await supabase
+                        .from('expense_entries')
+                        .select('amount')
+                        .eq('site', site.site_name); // Assuming 'site' column in expense_entries stores site_name
+                    if (expensesError) console.error(`Error fetching expenses for ${site.site_name}:`, expensesError);
+                    const totalExpense = expenses ? expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) : 0;
+
+                    // Calculate new columns
+                    const budgetVsExpense = totalBudget - totalExpense;
+                    const paymentsVsExpense = totalPayments - totalExpense;
+
+                    return {
+                        site_name: site.site_name,
+                        totalPayments: totalPayments,
+                        totalBudget: totalBudget,
+                        totalExpense: totalExpense,
+                        budgetVsExpense: budgetVsExpense,
+                        paymentsVsExpense: paymentsVsExpense
+                    };
+                });
+
+                const siteTotals = await Promise.all(siteDataPromises);
+
+                tableBody.innerHTML = ''; // Clear loading message
+
+                if (siteTotals.length > 0) {
+                    siteTotals.forEach(data => {
+                        const row = tableBody.insertRow();
+                        row.insertCell().textContent = data.site_name;
+                        row.insertCell().textContent = data.totalPayments.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                        row.insertCell().textContent = data.totalBudget.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                        row.insertCell().textContent = data.totalExpense.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                        row.insertCell().textContent = data.budgetVsExpense.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                        row.insertCell().textContent = data.paymentsVsExpense.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="6">No data available.</td></tr>';
+                }
+
+            } catch (error) {
+                console.error('Error loading site totals:', error);
+                tableBody.innerHTML = '<tr><td colspan="6">Error loading data. Please try again.</td></tr>';
+            }
+        }
+
+        async function loadSupervisorTotals(filterSupervisor = null) { // Added filterSupervisor parameter
+            const tableBody = document.getElementById('supervisorTotalsTableBody');
+            tableBody.innerHTML = '<tr><td colspan="4">Loading data...</td></tr>';
+
+            try {
+                // Fetch all site details to get supervisor and site_name
+                let query = supabase.from('site_details').select('id, site_name, site_supervisor');
+                if (filterSupervisor) {
+                    query = query.eq('site_supervisor', filterSupervisor);
+                }
+                const { data: siteDetails, error: siteDetailsError } = await query;
+
+                if (siteDetailsError) throw siteDetailsError;
+                if (!siteDetails || siteDetails.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No site details found.</td></tr>';
+                    return;
+                }
+
+                const supervisorData = {};
+
+                for (const site of siteDetails) {
+                    const supervisor = site.site_supervisor;
+                    if (!supervisor) continue; // Skip if no supervisor is assigned
+
+                    if (!supervisorData[supervisor]) {
+                        supervisorData[supervisor] = {
+                            totalPayments: 0,
+                            totalExpense: 0,
+                        };
+                    }
+
+                    // Fetch payments for the current site
+                    const { data: payments, error: paymentsError } = await supabase
+                        .from('payment_details')
+                        .select('amount')
+                        .eq('site_id', site.id);
+                    if (paymentsError) console.error(`Error fetching payments for site ${site.site_name}:`, paymentsError);
+                    const sitePayments = payments ? payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0) : 0;
+                    supervisorData[supervisor].totalPayments += sitePayments;
+
+                    // Fetch expenses for the current site
+                    const { data: expenses, error: expensesError } = await supabase
+                        .from('expense_entries')
+                        .select('amount')
+                        .eq('site', site.site_name);
+                    if (expensesError) console.error(`Error fetching expenses for site ${site.site_name}:`, expensesError);
+                    const siteExpenses = expenses ? expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0) : 0;
+                    supervisorData[supervisor].totalExpense += siteExpenses;
+                }
+
+                tableBody.innerHTML = ''; // Clear loading message
+
+                if (Object.keys(supervisorData).length > 0) {
+                    for (const supervisorName in supervisorData) {
+                        const data = supervisorData[supervisorName];
+                        const remainingBalance = data.totalPayments - data.totalExpense;
+
+                        const row = tableBody.insertRow();
+                        row.insertCell().textContent = supervisorName;
+                        row.insertCell().textContent = data.totalPayments.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                        row.insertCell().textContent = data.totalExpense.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                        row.insertCell().textContent = remainingBalance.toLocaleString('en-IN', { style: 'currency', currency: 'PKR' });
+                    }
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4">No data available.</td></tr>';
+                }
+
+            } catch (error) {
+                console.error('Error loading supervisor totals:', error);
+                tableBody.innerHTML = '<tr><td colspan="4">Error loading data. Please try again.</td></tr>';
+            }
+        }
+    </script>
+</body>
+</html>

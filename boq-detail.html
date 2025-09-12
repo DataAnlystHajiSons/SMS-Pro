@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOQ Details</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="auth-guard.js" defer></script>
+  <style>
+    :root {
+        --primary-color: #1abc9c; /* Bright Teal */
+        --secondary-color: #95a5a6; /* Cool Silver */
+        --sidebar-bg: #34495e;    /* Wet Asphalt */
+        --body-bg: #ecf0f1;       /* Clouds */
+        --card-bg: #ffffff;
+        --font-family: 'Poppins', sans-serif;
+        --border-color: #dee2e6;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--body-bg);
+      margin: 0;
+      color: #333;
+      display: flex; /* Adjust body for flex layout */
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+        width: fit-content; /* Adjust width to content */
+        min-width: 260px; /* Ensure a minimum width */
+        background-color: var(--sidebar-bg); /* --sidebar-bg */
+        color: white;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .sidebar .logo {
+        font-size: 1.6rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    .sidebar .subtitle {
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #adb5bd;
+    }
+
+    .sidebar .menu a {
+        color: #dee2e6;
+        text-decoration: none;
+        padding: 12px 15px;
+        display: block;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .sidebar .menu a i {
+        margin-right: 15px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .sidebar .menu a:hover, .sidebar .menu a.active {
+        background-color: var(--primary-color); /* --primary-color */
+        color: white;
+    }
+
+    /* Main Content Styles */
+    .main-content {
+        margin-left: 260px;
+        padding: 30px;
+        width: calc(100% - 260px);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    label {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    select, input[type="text"], input[type="number"], input[type="file"], input[type="date"] {
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      border: 1px solid var(--border-color);
+      width: 100%;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    select:focus, input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(26, 188, 156, 0.25);
+        outline: none;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-right: 10px;
+      font-size: 1rem;
+      transition: background-color 0.3s, box-shadow 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+      background-color: #16a085; /* Darker Teal */
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+    }
+
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+
+    .table-container {
+        overflow-x: auto; /* This is the key change for scrollability */
+        margin-top: 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate; /* Use separate for rounded corners */
+      border-spacing: 0;
+      margin-top: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden; /* Ensures inner elements conform to border-radius */
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 15px;
+      text-align: left;
+      vertical-align: middle;
+      /* Set minimum widths for columns to prevent them from being too cramped */
+      min-width: 150px;
+    }
+
+    th:nth-child(2), td:nth-child(2) { /* Item Description */
+        min-width: 250px;
+    }
+
+    th:nth-child(6), td:nth-child(6), /* Qty */
+    th:nth-child(7), td:nth-child(7) { /* Unit Rate */
+        min-width: 120px;
+    }
+
+    th {
+      background-color: #f5f7fa;
+      color: #333;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85em;
+      letter-spacing: 0.5px;
+    }
+
+    tr:last-child td {
+        border-bottom: none; /* Remove border from last row */
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+
+    tr:hover {
+      background-color: #e9ecef;
+    }
+
+    td input, td select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    td input[readonly] {
+      background-color: #e9ecef;
+      cursor: not-allowed;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1050;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: var(--card-bg);
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 900px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover, .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .csv-info {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-left: 4px solid var(--primary-color);
+    }
+
+    .file-input-container {
+      margin: 20px 0;
+    }
+
+    /* Loading Overlay */
+    .loader-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3; /* Light grey */
+      border-top: 8px solid var(--primary-color); /* Blue */
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h1 class="logo">SMS Pro</h1>
+    <p class="subtitle">Site Management Suite</p>
+    <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html" class="active"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+</div>
+
+
+ 
+
+  <div class="main-content">
+    <div id="loaderOverlay" class="loader-overlay">
+      <div class="loader"></div>
+    </div>
+
+    <div class="container">
+    <h2>BOQ Details</h2>
+
+    <label for="siteSelect">Select Site:</label>
+    <select id="siteSelect"></select>
+
+    <div style="margin-top: 20px; margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <input type="text" id="searchBar" placeholder="Search by Item Description..." style="width: 250px; flex-grow: 1;">
+      <button class="btn btn-secondary" onclick="toggleFilterPane()">Filters</button>
+      <button id="toggleViewBtn" class="btn btn-secondary" onclick="toggleView()">Enter Edit Mode</button>
+      <button id="addItemBtn" class="btn btn-primary" onclick="addRow()" style="display: none;">Add Item</button>
+      <button id="saveChangesBtn" class="btn btn-primary" onclick="saveChanges()" style="display: none;">Save Changes</button>
+      <button class="btn btn-primary" onclick="openImportModal()">Bulk Import CSV</button>
+    </div>
+
+    <div id="filterPane" style="display: none; padding: 20px; background-color: #f1f4f8; border: 1px solid var(--border-color); margin-top: 20px; border-radius: 8px;">
+        <div class="row">
+            <div class="col-md-3 filter-group">
+                <label for="itemTypeFilter">Item Type</label>
+                <select id="itemTypeFilter" class="form-control">
+                    <option value="">All</option>
+                    <option value="Material">Material</option>
+                    <option value="Service Charges">Service Charges</option>
+                </select>
+            </div>
+            <div class="col-md-3 filter-group">
+                <label for="standardsFilter">Standards</label>
+                <input type="text" id="standardsFilter" class="form-control" placeholder="e.g., ISO 9001">
+            </div>
+            <div class="col-md-3 filter-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" class="form-control">
+            </div>
+            <div class="col-md-3 filter-group">
+                <label for="endDate">End Date</label>
+                <input type="date" id="endDate" class="form-control">
+            </div>
+            <div class="col-md-3 filter-group">
+                <label for="minQty">Min Quantity</label>
+                <input type="number" id="minQty" class="form-control" placeholder="0">
+            </div>
+            <div class="col-md-3 filter-group">
+                <label for="maxQty">Max Quantity</label>
+                <input type="number" id="maxQty" class="form-control" placeholder="1000">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">Reset Filters</button>
+    </div>
+
+    <!-- CSV Import Modal -->
+    <div id="importModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeImportModal()">&times;</span>
+      <h3>Import BOQ Items from CSV</h3>
+      
+      <div class="csv-info">
+        <p><strong>CSV Format Requirements:</strong></p>
+        <p>Your CSV file should have the following columns in this order:</p>
+        <code>item_type,item_category,item_description,standards,specifications,unit,qty,unit_rate,gst_rate,status</code>
+        <p>Example row: <code>Material,PUMP SET & PRIMER MOVER,Cement,ISO 9001,High Grade,Bags,10,500,16,Pending</code></p>
+      </div>
+      
+      <div class="file-input-container">
+        <input type="file" id="csvFileInput" accept=".csv" onchange="previewCSV()">
+      </div>
+  
+      <div id="csvPreview" style="display: none;">
+        <h4>CSV Preview:</h4>
+        <table id="csvPreviewTable">
+          <thead>
+            <tr>
+              <th>Item Type</th>
+              <th>Item Category</th>
+              <th>Item Description</th>
+              <th>Standards</th>
+              <th>Specifications</th>
+              <th>Unit</th>
+              <th>Qty</th>
+              <th>Unit Rate</th>
+              <th>GST Rate</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="csvPreviewBody"></tbody>
+        </table>
+        <div style="margin-top: 15px;">
+          <button class="btn" id="importButton" onclick="importCSV()" disabled>Import Items</button>
+          <span id="importStatus"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table id="boqTable">
+      <thead>
+        <tr>
+          <th>Item Type</th>
+          <th>Item Category</th>
+          <th>Item Description</th>
+          <th>Standards</th>
+          <th>Specifications</th>
+          <th>Unit</th>
+          <th>Qty</th>
+          <th>Unit Rate (PKR)</th>
+          <th>Cost (PKR)</th>
+          <th>GST Rate (%)</th>
+          <th>GST (PKR)</th>
+          <th>Total (PKR)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="boqTableBody"></tbody>
+    </table>
+  </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    // Supabase client initialization
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://mxktarizsqttwwzbqgld.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    // DOM elements
+    const siteSelect = document.getElementById('siteSelect');
+    const boqTableBody = document.getElementById('boqTableBody');
+    const importModal = document.getElementById('importModal');
+    const csvPreview = document.getElementById('csvPreview');
+    const csvPreviewBody = document.getElementById('csvPreviewBody');
+    const importButton = document.getElementById('importButton');
+    const importStatus = document.getElementById('importStatus');
+    const loaderOverlay = document.getElementById('loaderOverlay');
+    const searchBar = document.getElementById('searchBar');
+    const toggleViewBtn = document.getElementById('toggleViewBtn');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const saveChangesBtn = document.getElementById('saveChangesBtn');
+
+    let isEditMode = false; // State to track the current view
+    let currentBoqData = []; // Cache for the loaded data
+
+    function toggleView() {
+      isEditMode = !isEditMode;
+      if (isEditMode) {
+        toggleViewBtn.textContent = 'Switch to Read-only';
+        toggleViewBtn.classList.remove('btn-secondary');
+        toggleViewBtn.classList.add('btn-primary');
+        addItemBtn.style.display = 'inline-block';
+        saveChangesBtn.style.display = 'inline-block';
+        renderEditableTable();
+      } else {
+        toggleViewBtn.textContent = 'Enter Edit Mode';
+        toggleViewBtn.classList.remove('btn-primary');
+        toggleViewBtn.classList.add('btn-secondary');
+        addItemBtn.style.display = 'none';
+        saveChangesBtn.style.display = 'none';
+        renderReadOnlyTable();
+      }
+    }
+
+    function renderReadOnlyTable() {
+      boqTableBody.innerHTML = '';
+      currentBoqData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.item_type}</td>
+          <td>${row.item_category}</td>
+          <td>${row.item_description}</td>
+          <td>${row.standards}</td>
+          <td>${row.specifications}</td>
+          <td>${row.unit}</td>
+          <td>${row.qty}</td>
+          <td>${row.unit_rate}</td>
+          <td>${row.cost.toFixed(2)}</td>
+          <td>${row.gst_rate}</td>
+          <td>${row.gst.toFixed(2)}</td>
+          <td>${row.total.toFixed(2)}</td>
+          <td>${row.status}</td>
+        `;
+        boqTableBody.appendChild(tr);
+      });
+    }
+
+    function renderEditableTable() {
+        boqTableBody.innerHTML = '';
+        currentBoqData.forEach(row => addRow(row, true));
+    }
+
+    function showLoader() {
+      loaderOverlay.style.display = 'flex';
+    }
+
+    function hideLoader() {
+      loaderOverlay.style.display = 'none';
+    }
+
+    function toggleFilterPane() {
+      const filterPane = document.getElementById('filterPane');
+      if (filterPane.style.display === 'none' || filterPane.style.display === '') {
+        filterPane.style.display = 'block';
+      } else {
+        filterPane.style.display = 'none';
+      }
+    }
+
+    async function applyFilters() {
+      const siteId = siteSelect.value;
+      if (!siteId) return;
+
+      let query = supabaseClient
+        .from('boq_details')
+        .select('*')
+        .eq('site_id', siteId);
+
+      // Search Bar
+      const searchTerm = document.getElementById('searchBar').value;
+      if (searchTerm) {
+        query = query.ilike('item_description', `%${searchTerm}%`);
+      }
+
+      // Item Type Filter
+      const itemType = document.getElementById('itemTypeFilter').value;
+      if (itemType) {
+        query = query.eq('item_type', itemType);
+      }
+
+      // Standards Filter
+      const standards = document.getElementById('standardsFilter').value;
+      if (standards) {
+        query = query.ilike('standards', `%${standards}%`);
+      }
+
+      // Date Range Filter
+      const startDate = document.getElementById('startDate').value;
+      if (startDate) {
+        query = query.gte('timestamp', startDate);
+      }
+      const endDate = document.getElementById('endDate').value;
+      if (endDate) {
+        query = query.lte('timestamp', endDate);
+      }
+
+      // Quantity Filter
+      const minQty = document.getElementById('minQty').value;
+      if (minQty) {
+        query = query.gte('qty', minQty);
+      }
+      const maxQty = document.getElementById('maxQty').value;
+      if (maxQty) {
+        query = query.lte('qty', maxQty);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error applying filters:', error);
+        return;
+      }
+
+      currentBoqData = data;
+      if (isEditMode) {
+        renderEditableTable();
+      } else {
+        renderReadOnlyTable();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('searchBar').value = '';
+      document.getElementById('itemTypeFilter').value = '';
+      document.getElementById('standardsFilter').value = '';
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      document.getElementById('minQty').value = '';
+      document.getElementById('maxQty').value = '';
+      siteSelect.dispatchEvent(new Event('change'));
+    }
+
+    searchBar.addEventListener('input', applyFilters);
+
+    // --- CSV Import Functions ---
+    function openImportModal() {
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        alert('Please select a site first.');
+        return;
+      }
+      importModal.style.display = 'block';
+      // Reset the file input and preview
+      document.getElementById('csvFileInput').value = '';
+      csvPreview.style.display = 'none';
+      csvPreviewBody.innerHTML = '';
+      importButton.disabled = true;
+      importStatus.textContent = '';
+    }
+
+    function closeImportModal() {
+      importModal.style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+      if (event.target === importModal) {
+        closeImportModal();
+      }
+    };
+
+    function previewCSV() {
+      const fileInput = document.getElementById('csvFileInput');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        csvPreview.style.display = 'none';
+        return;
+      }
+      
+      // Check if it's a CSV file
+      if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+        alert('Please select a valid CSV file.');
+        fileInput.value = '';
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const contents = e.target.result;
+        const rows = parseCSV(contents);
+        
+        if (rows.length === 0) {
+          alert('The CSV file appears to be empty.');
+          return;
+        }
+        
+        // Display preview (limited to first 10 rows)
+        csvPreviewBody.innerHTML = '';
+        const previewRows = rows.slice(0, 10);
+        
+        previewRows.forEach(row => {
+          if (row.length < 10) {
+            // Skip rows with insufficient columns
+            return;
+          }
+          
+          const tr = document.createElement('tr');
+          // Only show the first 10 columns in preview
+          for (let i = 0; i < 10; i++) {
+            const td = document.createElement('td');
+            td.textContent = row[i] || '';
+            tr.appendChild(td);
+          }
+          csvPreviewBody.appendChild(tr);
+        });
+        
+        csvPreview.style.display = 'block';
+        importButton.disabled = false;
+        importStatus.textContent = `${rows.length} rows found in CSV.`;
+      };
+      
+      reader.readAsText(file);
+    }
+
+    function parseCSV(text) {
+      // Simple CSV parser - handles quoted values and commas within quotes
+      const rows = [];
+      let currentRow = [];
+      let currentValue = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+        
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            // Double quotes inside quotes - add a single quote
+            currentValue += '"';
+            i++; // Skip the next quote
+          } else {
+            // Toggle quote mode
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          // End of value
+          currentRow.push(currentValue.trim());
+          currentValue = '';
+        } else if ((char === '\r' || char === '\n') && !inQuotes) {
+          // End of line
+          if (currentValue !== '' || currentRow.length > 0) {
+            currentRow.push(currentValue.trim());
+            rows.push(currentRow);
+            currentRow = [];
+            currentValue = '';
+          }
+          
+          // Skip the \n if we just processed \r\n
+          if (char === '\r' && nextChar === '\n') {
+            i++;
+          }
+        } else {
+          currentValue += char;
+        }
+      }
+      
+      // Add the last row if there's any data
+      if (currentValue !== '' || currentRow.length > 0) {
+        currentRow.push(currentValue.trim());
+        rows.push(currentRow);
+      }
+      
+      return rows;
+    }
+
+    async function importCSV() {
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        alert('Please select a site first.');
+        return;
+      }
+      
+      const fileInput = document.getElementById('csvFileInput');
+      const file = fileInput.files[0];
+      
+      if (!file) {
+        alert('Please select a CSV file.');
+        return;
+      }
+      
+      importButton.disabled = true;
+      importStatus.textContent = 'Importing...';
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const contents = e.target.result;
+        const rows = parseCSV(contents);
+        
+        if (rows.length === 0) {
+          importStatus.textContent = 'No data found in CSV.';
+          importButton.disabled = false;
+          return;
+        }
+        
+        // Skip the header row if it exists
+        const startRow = (rows[0][0] === 'item_type' || 
+                     rows[0][0] === 'Item Type' || 
+                     rows[0][0].toLowerCase() === 'item_type') ? 1 : 0;
+        
+        const itemsToInsert = [];
+        
+        // Process each row, starting after the header if detected
+        for (let i = startRow; i < rows.length; i++) {
+          const row = rows[i];
+          if (row.length < 10) {
+            // Skip rows with insufficient columns
+            continue;
+          }
+          
+          // Calculate derived values
+          const qty = parseFloat(row[6]) || 0;
+          const unitRate = parseFloat(row[7]) || 0;
+          const gstRate = parseFloat(row[8]) || 0;
+          const cost = qty * unitRate;
+          const gst = (cost * gstRate) / 100;
+          const total = cost + gst;
+          
+          // Ensure item_type exactly matches one of the allowed values
+          // Trim whitespace and ensure exact case match
+          let itemType = (row[0] || '').trim();
+          
+          // Normalize to exactly 'Material' or 'Service Charges'
+          if (itemType.toLowerCase() === 'material') {
+            itemType = 'Material';
+          } else if (itemType.toLowerCase() === 'service charges') {
+            itemType = 'Service Charges';
+          } else {
+            console.warn(`Invalid item_type: "${itemType}", defaulting to 'Material'`);
+            itemType = 'Material';
+          }
+          
+          // Create record object
+          const record = {
+            id: crypto.randomUUID(),
+            site_id: siteId,
+            item_type: itemType,
+            item_category: row[1] || '',
+            item_description: row[2] || '',
+            standards: row[3] || '',
+            specifications: row[4] || '',
+            unit: row[5] || '',
+            qty: qty,
+            unit_rate: unitRate,
+            cost: cost,
+            gst_rate: gstRate,
+            gst: gst,
+            total: total,
+            status: row[9] || 'Pending',
+            timestamp: new Date().toISOString()
+          };
+          
+          itemsToInsert.push(record);
+        }
+        
+        if (itemsToInsert.length === 0) {
+          importStatus.textContent = 'No valid data found to import.';
+          importButton.disabled = false;
+          return;
+        }
+        
+        let successCount = 0;
+        let errorCount = 0;
+        
+        importStatus.textContent = `Processing ${itemsToInsert.length} items...`;
+        
+        // Process one record at a time for better error identification
+        const batchSize = 1;
+        
+        for (let i = 0; i < itemsToInsert.length; i += batchSize) {
+          const batch = itemsToInsert.slice(i, i + batchSize);
+          try {
+            const { data, error } = await supabaseClient.from('boq_details').insert(batch);
+            
+            if (error) {
+              console.error('Error inserting batch:', error);
+              console.log('Failed record:', JSON.stringify(batch[0]));
+              errorCount += batch.length;
+            } else {
+              successCount += batch.length;
+            }
+          } catch (batchError) {
+            console.error('Exception during insert:', batchError);
+            console.log('Failed record:', JSON.stringify(batch[0]));
+            errorCount += batch.length;
+          }
+          
+          // Update status
+          importStatus.textContent = `Processed ${i + batch.length} of ${itemsToInsert.length} items... (${successCount} successful, ${errorCount} failed)`;
+          
+          // Small delay between batches
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // Final status update
+        if (errorCount > 0) {
+          importStatus.textContent = `Import completed with errors. ${successCount} items imported, ${errorCount} failed. Check console for details.`;
+        } else {
+          importStatus.textContent = `Successfully imported ${successCount} items!`;
+          
+          // Refresh the table after a short delay
+          setTimeout(() => {
+            closeImportModal();
+            siteSelect.dispatchEvent(new Event('change'));
+          }, 2000);
+        }
+        
+        importButton.disabled = false;
+      };
+      
+      reader.readAsText(file);
+    }
+
+    // --- Fetch and Populate Sites ---
+    async function fetchSites() {
+      const { data, error } = await supabaseClient
+        .from('site_details')
+        .select('id, site_name');
+
+      if (error) {
+        console.error('Error loading sites:', error);
+        return;
+      }
+
+      siteSelect.innerHTML = '<option value="">-- Select Site --</option>';
+      data.forEach(site => {
+        const option = document.createElement('option');
+        option.value = site.id;
+        option.textContent = site.site_name;
+        siteSelect.appendChild(option);
+      });
+    }
+
+    // --- Event Listener for Site Selection ---
+    siteSelect.addEventListener('change', async () => {
+      boqTableBody.innerHTML = ''; // Clear existing rows
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        currentBoqData = [];
+        renderReadOnlyTable();
+        return; // Do nothing if no site is selected
+      }
+
+      const { data, error } = await supabaseClient
+        .from('boq_details')
+        .select('*')
+        .eq('site_id', siteId)
+        .order('item_type', { decending: true });
+
+      if (error) {
+        console.error('Error fetching BOQ details:', error);
+        currentBoqData = [];
+        renderReadOnlyTable();
+        return;
+      }
+
+      currentBoqData = data;
+      if (isEditMode) {
+        renderEditableTable();
+      } else {
+        renderReadOnlyTable();
+      }
+    });
+
+    // --- Add Row Function ---
+    function addRow(row = {}, isExisting = false) {
+      const tr = document.createElement('tr');
+      // Use a consistent way to mark new rows. A data attribute is good.
+      tr.setAttribute('data-is-new', isExisting ? 'false' : 'true');
+      tr.setAttribute('data-id', row.id || ''); // Store existing ID if available
+
+      const itemTypes = ['Material', 'Service Charges'];
+      const itemCategoryOptions = ['PUMP SET & PRIMER MOVER', 'FILTERATION & FERTIGATION', 'PIPES & FITTINGS', 'EMITTING DEVICES', 'ACCESSORIES', 'MONITORING DEVICES', 'CIVIL WORKS', 'SERVICE CHARGES'];
+      const statusOptions = ['Approved', 'Pending'];
+
+      tr.innerHTML = `
+        <td>
+          <select name="item_type">
+            ${itemTypes.map(t => `<option value="${t}" ${row.item_type === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <select name="item_category">
+            ${itemCategoryOptions.map(c => `<option value="${c}" ${row.item_category === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </td>
+        <td><input type="text" name="item_description" value="${row.item_description || ''}"></td>
+        <td><input type="text" name="standards" value="${row.standards || ''}"></td>
+        <td><input type="text" name="specifications" value="${row.specifications || ''}"></td>
+        <td><input type="text" name="unit" value="${row.unit || ''}"></td>
+        <td><input type="number" name="qty" value="${row.qty || 0}" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="unit_rate" value="${row.unit_rate || 0}" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="cost" value="${row.cost || 0}" readonly></td>
+        <td><input type="number" name="gst_rate" value="${row.gst_rate || 0}" oninput="calculateRow(this)"></td>
+        <td><input type="number" name="gst" value="${row.gst || 0}" readonly></td>
+        <td><input type="number" name="total" value="${row.total || 0}" readonly></td>
+        <td>
+          <select name="status">
+            ${statusOptions.map(s => `<option value="${s}" ${row.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </td>
+      `;
+      boqTableBody.appendChild(tr);
+
+      // Immediately calculate for loaded rows as well
+      calculateRow(tr.querySelector('[name="qty"]'));
+    }
+
+    // --- Calculate Row Values ---
+    function calculateRow(inputElement) {
+      const row = inputElement.closest('tr');
+      const qty = parseFloat(row.querySelector('[name="qty"]').value) || 0;
+      const unitRate = parseFloat(row.querySelector('[name="unit_rate"]').value) || 0;
+      const gstRate = parseFloat(row.querySelector('[name="gst_rate"]').value) || 0;
+
+      const cost = qty * unitRate;
+      const gst = (cost * gstRate) / 100;
+      const total = cost + gst;
+
+      row.querySelector('[name="cost"]').value = cost.toFixed(2);
+      row.querySelector('[name="gst"]').value = gst.toFixed(2);
+      row.querySelector('[name="total"]').value = total.toFixed(2);
+    }
+
+    // --- Save Changes Function ---
+    async function saveChanges() {
+      const siteId = siteSelect.value;
+      if (!siteId) {
+        alert('Please select a site first.');
+        return;
+      }
+
+      const saveButton = document.querySelector('button[onclick="saveChanges()"]');
+      saveButton.disabled = true;
+      showLoader();
+
+      const rowsToInsert = [];
+      const rowsToUpdate = [];
+
+      boqTableBody.querySelectorAll('tr').forEach(row => {
+        const record = {
+          site_id: siteId,
+          item_type: row.querySelector('[name="item_type"]').value,
+          item_category: row.querySelector('[name="item_category"]').value,
+          item_description: row.querySelector('[name="item_description"]').value,
+          standards: row.querySelector('[name="standards"]').value,
+          specifications: row.querySelector('[name="specifications"]').value,
+          unit: row.querySelector('[name="unit"]').value,
+          qty: parseFloat(row.querySelector('[name="qty"]').value) || 0,
+          unit_rate: parseFloat(row.querySelector('[name="unit_rate"]').value) || 0,
+          cost: parseFloat(row.querySelector('[name="cost"]').value) || 0,
+          gst_rate: parseFloat(row.querySelector('[name="gst_rate"]').value) || 0,
+          gst: parseFloat(row.querySelector('[name="gst"]').value) || 0,
+          total: parseFloat(row.querySelector('[name="total"]').value) || 0,
+          status: row.querySelector('[name="status"]').value,
+          timestamp: new Date().toISOString()
+        };
+
+        if (row.getAttribute('data-is-new') === 'true') {
+          // For new rows, generate a UUID and add to insert array
+          record.id = crypto.randomUUID();
+          rowsToInsert.push(record);
+        } else {
+          // For existing rows, add ID and to update array
+          record.id = row.getAttribute('data-id');
+          rowsToUpdate.push(record);
+        }
+      });
+
+      try {
+        let hasError = false;
+
+        // Insert new rows
+        if (rowsToInsert.length > 0) {
+          const { error: insertError } = await supabaseClient.from('boq_details').insert(rowsToInsert);
+          if (insertError) {
+            alert('Error inserting new rows: ' + insertError.message);
+            hasError = true;
+          }
+        }
+
+        // Update existing rows concurrently
+        if (rowsToUpdate.length > 0 && !hasError) {
+          const updatePromises = rowsToUpdate.map(record =>
+            supabaseClient
+              .from('boq_details')
+              .update(record)
+              .eq('id', record.id)
+          );
+
+          const results = await Promise.all(updatePromises);
+          const updateErrors = results.filter(res => res.error);
+
+          if (updateErrors.length > 0) {
+            alert(`Error updating ${updateErrors.length} rows. Check console for details.`);
+            updateErrors.forEach(err => console.error('Update error:', err.error));
+            hasError = true;
+          }
+        }
+
+        if (!hasError) {
+          alert('Changes saved successfully!');
+          siteSelect.dispatchEvent(new Event('change')); // Refresh table
+          toggleView(); // Switch back to read-only view
+        }
+      } catch (error) {
+        console.error('An unexpected error occurred during save:', error);
+        alert('An unexpected error occurred. Please try again.');
+      } finally {
+        saveButton.disabled = false;
+        hideLoader();
+      }
+    }
+
+    // --- Initial Data Load ---
+    fetchSites();
+  </script>
+</body>
+</html>

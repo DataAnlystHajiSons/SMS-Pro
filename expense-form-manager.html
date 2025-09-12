@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Expenses</title>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+            --border-color: #dee2e6;
+        }
+
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            color: #202124;
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+            width: calc(100% - 280px);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 400;
+        }
+
+        .form-section {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #5f6368;
+        }
+
+        .required {
+            color: #d93025;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .radio-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+
+        select, input[type="text"], input[type="date"], input[type="number"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.2);
+        }
+
+        /* Validation Feedback */
+        .error-field {
+            border-color: #d93025 !important;
+            box-shadow: 0 0 0 2px rgba(217, 48, 37, 0.2) !important;
+        }
+
+        /* Section Headers */
+        .section-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            margin: 0 -20px 20px -20px;
+            font-weight: 500;
+        }
+
+        /* Invoice/Expense Containers */
+        .invoice-container, .single-expense-container {
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .invoice-title {
+            font-weight: 500;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .remove-invoice {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-invoice:hover {
+            background: #c0392b;
+        }
+
+        /* Buttons */
+        .add-invoice-btn, .add-single-expense-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .add-invoice-btn:hover, .add-single-expense-btn:hover {
+            background: #16a085; /* Darker Teal */
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed #dadce0;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary-color);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        .file-list { /* Added for displaying multiple file names */
+            margin-top: 10px;
+            text-align: left;
+            font-size: 12px;
+            color: #5f6368;
+        }
+        .file-list span {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .form-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background: #f8f9fa;
+            margin: 0 -20px -20px -20px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #16a085; /* Darker Teal */
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(26, 188, 156, 0.04);
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .error {
+            color: #d93025;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .success {
+            background: #e8f5e8;
+            color: #137333;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive Table Styles */
+        .table-responsive {
+            margin-top: 15px;
+        }
+
+        .invoice-items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .invoice-items-table th,
+        .invoice-items-table td {
+            border: 1px solid #eee;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .invoice-items-table th {
+            background-color: #f2f2f2;
+            font-weight: 500;
+            font-size: 13px;
+            color: #5f6368;
+        }
+
+        .invoice-items-table td input[type="text"],
+        .invoice-items-table td input[type="number"],
+        .invoice-items-table td textarea,
+        .invoice-items-table td select {
+            width: calc(100% - 4px);
+            padding: 6px;
+            font-size: 13px;
+            margin: 0;
+            border-radius: 4px; /* Added rounded corners */
+        }
+        
+        .add-item-row-btn {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .add-item-row-btn:hover {
+            background: #27ae60;
+        }
+        .remove-item-row-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .remove-item-row-btn:hover {
+            background: #c0392b;
+        }
+        .invoice-total {
+            text-align: right;
+            font-weight: bold;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            margin-top: 10px;
+        }
+
+        /* Media queries for true mobile stacking of table rows */
+        @media (max-width: 768px) {
+            .invoice-items-table thead {
+                display: none; /* Hide table headers on small screens */
+            }
+            .invoice-items-table, .invoice-items-table tbody, .invoice-items-table tr, .invoice-items-table td {
+                display: block;
+                width: 100%;
+            }
+            .invoice-items-table tr {
+                margin-bottom: 15px;
+                border: 1px solid #dadce0;
+                border-radius: 8px;
+                padding: 10px;
+            }
+            .invoice-items-table td {
+                text-align: right;
+                padding-left: 50%; /* Make space for the pseudo-element label */
+                position: relative;
+                border: none; /* Remove individual cell borders */
+                padding-bottom: 5px; /* Adjust padding for stacked look */
+                padding-top: 5px;
+            }
+            .invoice-items-table td::before {
+                content: attr(data-label); /* Use data-label for the field name */
+                position: absolute;
+                left: 10px;
+                width: calc(50% - 20px);
+                text-align: left;
+                font-weight: 500;
+                color: #5f6368;
+            }
+            .invoice-items-table td:last-child {
+                text-align: center; /* Center the action button */
+                padding-left: 10px; /* Reset padding for action column */
+            }
+            .invoice-items-table td input,
+            .invoice-items-table td select,
+            .invoice-items-table td textarea {
+                width: 100%; /* Ensure inputs take full width of their 'cell' */
+            }
+        }
+
+        /* Hamburger menu icon */
+        .menu-toggle {
+            display: none; /* Hidden by default on desktop */
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001; /* Above sidebar */
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        /* Media Query for Mobile Devices */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column; /* Stack content vertically */
+                height: auto; /* Allow body to grow */
+                min-height: 100vh; /* Ensure it's at least viewport height */
+            }
+
+            .menu-toggle {
+                display: block; /* Show hamburger menu on mobile */
+            }
+
+            .sidebar {
+                left: -260px; /* Hide sidebar by default */
+                transition: left 0.3s ease-in-out;
+                z-index: 1000;
+                width: 260px; /* Fixed width when hidden */
+            }
+
+            .sidebar.active {
+                left: 0; /* Show sidebar */
+            }
+
+            .main-content {
+                margin-left: 0; /* No margin on mobile */
+                width: 100%; /* Full width */
+                padding: 15px; /* Adjust padding for mobile */
+            }
+
+            /* Adjust container for expense-form-manager.html */
+            .container {
+                margin: 10px auto;
+                padding: 10px;
+            }
+
+            /* Hide main content when sidebar is active to prevent interaction */
+            body.sidebar-open .main-content {
+                pointer-events: none;
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="manager-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="expense-form-manager.html" class="active"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="attendance.html"><i class="fa-solid fa-user-check"></i> <span>Attendance</span></a>
+            <a href="survey-form-new.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Form</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Record Expenses</h1>
+                <p>The name, email address and photo associated with your Google Account will be recorded when you upload files and submit this form</p>
+            </div>
+
+            <form id="expenseForm">
+                <div class="form-section">
+                    
+                    <div id="expenseSectionsContainer">
+                        <div class="section-header">Project Details</div>
+                        <div class="form-group">
+                            <label for="projectType">Project Type <span class="required">*</span></label>
+                            <select id="projectType" name="projectType">
+                                <option value="">Choose</option>
+                                <option value="PRIAT">PRIAT</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group hidden" id="siteNatureGroup">
+                            <label for="siteNature">Site Nature <span class="required">*</span></label>
+                            <select id="siteNature" name="siteNature">
+                                <option value="">Choose</option>
+                            </select>
+                        </div>
+
+                        <div class="section-header">Expense Nature</div>
+                        <div class="form-group">
+                            <label>Select Expense Type <span class="required">*</span></label>
+                            <div class="radio-group">
+                                <div class="radio-item">
+                                    <input type="radio" id="invoice" name="expenseNature" value="Invoice" checked disabled>
+                                    <label for="invoice">Site Wise Expense</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="invoiceSection">
+                            <div class="section-header">Site Wise Expense</div>
+                            <p style="margin-bottom: 15px; font-size: 12px; color: #5f6368;">Bills must be on Vendors Letter Head or with Company Stamp.</p>
+                            <button type="button" class="add-invoice-btn" onclick="addInvoice()">+ Add Bill Form</button>
+                            <div id="invoicesContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Moved success and error messages to the end of the form -->
+                <div id="successMessage" class="success hidden"></div>
+                <div id="errorMessage" class="error hidden"></div>
+
+                <div class="form-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear form</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables - declared at the top to avoid initialization issues
+        let invoiceCount = 0;
+        let invoiceItemCount = {};
+        let invoiceFiles = {}; // Stores file objects for each form
+        let siteNames = []; // To store site names fetched from Supabase
+        let supabase = null; // Initialize as null first
+
+        // Caching for Vendor Details and Approved By
+        let vendorDetailsCache = new Set(JSON.parse(localStorage.getItem('vendorDetailsCache') || '[]'));
+        let approvedByCache = new Set(JSON.parse(localStorage.getItem('approvedByCache') || '[]'));
+
+        // Supabase Client Initialization variables
+        // IMPORTANT: Replace with your actual Supabase URL and Anon Key
+        const SUPABASE_URL = 'https://mxktarizsqttwwzbqgld.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+        
+        // IMPORTANT: Replace 'YOUR_USER_ID_FROM_DASHBOARD' with the actual user ID from your dashboard's auth context.
+        // This userId will be used for associating expense entries and for file storage paths.
+        // For testing, I'm using the provided ID. In a real app, this would come from the authenticated user session.
+        const userId = '2cc75313-53cf-4c8b-b197-89b1fe94e0ad'; 
+
+        const siteNatureOptions = {
+            'PRIAT': [{ value: 'PRIAT - SOLAR', text: 'PRIAT - SOLAR' }, { value: 'PRIAT - DRIP', text: 'PRIAT - DRIP' }],
+            'CM Solar': [{ value: 'CM SOLAR - Tubewell', text: 'CM SOLAR - Tubewell' }]
+        };
+
+        const expenseTypeDetailOptions = [
+            { value: '', text: 'Choose' }, { value: 'Travelling', text: 'Travelling' }, { value: 'Transportation', text: 'Transportation' },
+            { value: 'Loading/unloading', text: 'Loading/unloading' }, { value: 'Food', text: 'Food' }, { value: 'petrol', text: 'petrol' },
+            { value: 'Miscellenious/Other', text: 'Miscellenious/Other' }, { value: 'Stationery/Printing', text: 'Stationery/Printing' },
+            { value: 'Hotel Stay', text: 'Hotel Stay' }, { value: 'Mobile Allowance', text: 'Mobile Allowance' }, { value: 'Stamp Paper', text: 'Stamp Paper' },
+            { value: 'Toll Tax', text: 'Toll Tax' }, { value: 'Soil/Dripline Testing', text: 'Soil/Dripline Testing' },
+            { value: 'General Repair & Miantenenace', text: 'General Repair & Miantenenace' }, { value: 'Vehicle Repair & Miantenenace', text: 'Vehicle Repair & Miantenenace' },
+            { value: 'Entertainment', text: 'Entertainment' }, { value: 'Labour Charges', text: 'Labour Charges' }, 
+            { value: 'Trenching and Back filling', text: 'Trenching and Back filling' },
+            { value: 'Excavation', text: 'Excavation' }, { value: 'Tools', text: 'Tools' },
+            { value: 'Courrier', text: 'Courrier' }, 
+            { value: 'Bricks', text: 'Bricks' },
+            { value: 'Cement', text: 'Cement' }, 
+            { value: 'Sand', text: 'Sand' }, 
+            { value: 'Aggregates', text: 'Aggregates' }, 
+            { value: 'Head Unit Assembly', text: 'Head Unit Assembly' }, 
+            { value: 'GI Fitting', text: 'GI Fitting' }, 
+            { value: 'Painting/Writing', text: 'Painting/Writing' }, 
+            { value: 'Earthing Bore', text: 'Earthing Bore' }, 
+            { value: 'PVC Fitting', text: 'PVC Fitting' }, 
+            { value: 'Assets', text: 'Assets' }, 
+            { value: 'Bilty', text: 'Bilty' }
+        ];
+
+        const itemDescriptionMapping = {
+            'Stationery/Printing': 'Survey & Design',
+            'Stamp Paper': 'Survey & Design',
+            'Soil/Dripline Testing': 'Survey & Design',
+            'Entertainment': 'Survey & Design',
+            'Bricks': 'Head Unit Foundation',
+            'Cement': 'Head Unit Foundation',
+            'Sand': 'Head Unit Foundation',
+            'Aggregates': 'Head Unit Foundation',
+            'Labour Charges': 'Installation',
+            'Earthing Bore': 'Installation',
+            'Tools': 'Installation',
+            'GI Fitting': 'Installation',
+            'PVC Fitting': 'Installation',
+            'Travelling': 'Transportation',
+            'Transportation': 'Transportation',
+            'Loading/unloading': 'Transportation',
+            'Trenching and Back filling': 'Trenching and Backfilling',
+            'Excavation': 'Trenching and Backfilling',
+            'Food': 'Food',
+            'petrol': 'Petrol',
+            'Miscellenious/Other': 'Miscellaneous/Other',
+            'Hotel Stay': 'Hotel Stay',
+            'Mobile Allowance': 'Mobile Allowance',
+            'Toll Tax': 'Toll Tax',
+            'General Repair & Miantenenace': 'General Repair & Maintenance',
+            'Vehicle Repair & Miantenenace': 'Vehicle Repair & Maintenance',
+            'Head Unit Assembly': 'Installation',
+            'Painting/Writing': 'Signboard',
+            'Assets': 'Assets',
+            'Bilty': 'Bilty',
+            'Courrier': 'Courier'
+        };
+
+        // Function to initialize Supabase client safely
+        function initializeSupabase() {
+            try {
+                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('Supabase client initialized successfully');
+                    return true;
+                } else {
+                    console.error('Supabase library not loaded properly');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+                return false;
+            }
+        }
+
+        // Initialize form on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Wait for Supabase to load and initialize
+            let retryCount = 0;
+            const maxRetries = 10;
+            
+            const initSupabase = () => {
+                if (initializeSupabase()) {
+                    // Supabase initialized successfully, proceed with app initialization
+                    initializeApp();
+                } else if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Retrying Supabase initialization... (${retryCount}/${maxRetries})`);
+                    setTimeout(initSupabase, 500); // Retry after 500ms
+                } else {
+                    console.error('Failed to initialize Supabase after maximum retries');
+                    showErrorMessage('Failed to initialize database connection. Please refresh the page.');
+                }
+            };
+            
+            initSupabase();
+        });
+
+        async function initializeApp() {
+            try {
+                await fetchSiteNames(); // Fetch site names before adding initial invoice
+                setupEventListeners();
+                addInvoice(); // Add an initial invoice form
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showErrorMessage('Error initializing application. Please refresh the page.');
+            }
+        }
+
+        /**
+         * Fetches site names from the 'site_details' table in Supabase.
+         */
+        async function fetchSiteNames() {
+            if (!supabase) {
+                console.error('Supabase client not initialized');
+                showErrorMessage('Database connection not available. Please refresh the page.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('site_details')
+                    .select('site_name'); // Assuming your site name column is 'site_name'
+
+                if (error) {
+                    console.error('Error fetching site names:', error);
+                    showErrorMessage('Failed to load site names. Please refresh.');
+                    return;
+                }
+                
+                if (data && Array.isArray(data)) {
+                    siteNames = data.map(row => row.site_name).filter(name => name); // Filter out null/undefined names
+                    console.log('Fetched Site Names:', siteNames);
+                } else {
+                    console.warn('No site names found or invalid data structure');
+                    siteNames = [];
+                }
+            } catch (err) {
+                console.error('Exception fetching site names:', err);
+                showErrorMessage('An error occurred while fetching site names.');
+                siteNames = []; // Set to empty array as fallback
+            }
+        }
+
+        /**
+         * Sets up event listeners for form elements.
+         */
+        function setupEventListeners() {
+            document.getElementById('projectType').addEventListener('change', updateSiteNatureDropdown);
+            document.getElementById('expenseForm').addEventListener('submit', handleSubmit);
+        }
+
+        /**
+         * Updates the Site Nature dropdown based on the selected Project Type.
+         */
+        function updateSiteNatureDropdown() {
+            const projectType = document.getElementById('projectType').value;
+            const siteNatureDropdown = document.getElementById('siteNature');
+            const siteNatureGroup = document.getElementById('siteNatureGroup');
+            siteNatureDropdown.innerHTML = '<option value="">Choose</option>'; // Clear existing options
+            if (projectType) {
+                const options = siteNatureOptions[projectType];
+                if (options) {
+                    options.forEach(option => {
+                        const optElement = document.createElement('option');
+                        optElement.value = option.value;
+                        optElement.textContent = option.text;
+                        siteNatureDropdown.appendChild(optElement);
+                    });
+                    siteNatureGroup.classList.remove('hidden');
+                } else {
+                    siteNatureGroup.classList.add('hidden');
+                }
+            } else {
+                siteNatureGroup.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Reads a file as a Base64 encoded string.
+         * @param {File} file The file to read.
+         * @returns {Promise<string>} A promise that resolves with the Base64 string.
+         */
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Get only the base64 part
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        /**
+         * Updates the display of selected file names and stores file objects for multiple files.
+         * @param {HTMLInputElement} input The file input element.
+         * @param {number} formId The ID of the form this file input belongs to.
+         */
+        async function updateFileNameDisplay(input, formId) {
+            const fileInfoDiv = input.closest('.file-upload').querySelector('.file-info');
+            const fileListDiv = document.getElementById(`fileList_${formId}`);
+            fileListDiv.innerHTML = ''; // Clear previous file list
+
+            invoiceFiles[formId] = []; // Initialize as an array to hold multiple file objects
+
+            if (input.files.length > 0) {
+                let allFilesValid = true;
+                for (const file of input.files) {
+                    if (file.size > 10 * 1024 * 1024) { // 10 MB limit per file
+                        showErrorMessage(`File "${file.name}" exceeds 10 MB limit. Please choose smaller files.`);
+                        input.value = ''; // Clear input if any file is too large
+                        fileInfoDiv.textContent = 'Upload supported file(s). Max 10 MB per file.';
+                        fileListDiv.innerHTML = '';
+                        delete invoiceFiles[formId]; // Clear all files for this form
+                        allFilesValid = false;
+                        break; // Stop processing if one file is invalid
+                    }
+                    fileListDiv.innerHTML += `<span>${file.name}</span>`; // Display each file name
+                    invoiceFiles[formId].push(file); // Store the File object directly
+                }
+                if (allFilesValid) {
+                     fileInfoDiv.textContent = `${input.files.length} file(s) selected.`;
+                }
+            } else {
+                fileInfoDiv.textContent = 'Upload supported file(s). Max 10 MB per file.';
+                delete invoiceFiles[formId]; // No files selected
+            }
+        }
+
+        /**
+         * Adds a new invoice form section to the page.
+         */
+        function addInvoice() {
+            invoiceCount++;
+            const formId = invoiceCount;
+            invoiceItemCount[formId] = 0;
+            const container = document.getElementById('invoicesContainer');
+            const invoiceDiv = document.createElement('div');
+            invoiceDiv.className = 'invoice-container';
+            invoiceDiv.setAttribute('data-form-type', 'invoice');
+            invoiceDiv.setAttribute('data-form-id', formId);
+            invoiceDiv.innerHTML = generateExpenseFormHtml(formId, 'invoice');
+            container.appendChild(invoiceDiv);
+            addExpenseItem(formId, 'invoice'); // Add initial item row
+        }
+
+        /**
+         * Removes an invoice form section from the page.
+         * @param {number} formId The ID of the form to remove.
+         */
+        function removeInvoice(formId) {
+            const invoiceDiv = document.querySelector(`[data-form-type="invoice"][data-form-id="${formId}"]`);
+            if (invoiceDiv) {
+                invoiceDiv.remove();
+                delete invoiceFiles[formId]; // Remove files associated with this form
+                delete invoiceItemCount[formId];
+                if (document.querySelectorAll('[data-form-type="invoice"]').length === 0) {
+                    addInvoice(); // Add a new empty form if all are removed
+                } else {
+                    // Re-number remaining forms
+                    document.querySelectorAll('[data-form-type="invoice"]').forEach((container, index) => {
+                        container.querySelector('.invoice-title').textContent = `Bill #${index + 1}`;
+                    });
+                }
+            }
+        }
+
+       /**
+        * Generates the HTML structure for an expense form (invoice type).
+        * @param {number} formId The unique ID for this form instance.
+        * @param {string} formType The type of form ('invoice').
+        * @returns {string} The HTML string for the form.
+        */
+       function generateExpenseFormHtml(formId, formType) {
+            const titlePrefix = 'Bill';
+            const removeFunction = `removeInvoice(${formId})`;
+            const itemTableBodyId = `${formType}ItemsTableBody_${formId}`;
+            const addItemFunction = `addExpenseItem(${formId}, '${formType}')`;
+            const totalAmountId = `${formType}TotalAmount_${formId}`;
+            const fileInputId = `${formType}FileInput_${formId}`;
+            const expenseTypeDetailOptionsHtml = expenseTypeDetailOptions.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+            return `
+                <div class="invoice-header">
+                    <span class="invoice-title">${titlePrefix} #${formId}</span>
+                    <button type="button" class="remove-invoice" onclick="${removeFunction}">Remove</button>
+                </div>
+                <div class="form-group">
+                    <label>${titlePrefix} Date <span class="required">*</span></label>
+                    <input type="date" name="${formType}Date_${formId}">
+                </div>
+                <div class="form-group">
+                    <label>Bill # <span class="required">*</span></label>
+                    <input type="text" name="invoiceNumber_${formId}" placeholder="e.g., INV001">
+                </div>
+                <div class="form-group">
+                    <label>Approved by <span class="required">*</span></label>
+                    <input type="text" name="${formType}ApprovedBy_${formId}" placeholder="Approver's Name" list="approvedBySuggestions" oninput="updateSuggestions(this, 'approvedBy')">
+                    <datalist id="approvedBySuggestions"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>Vendor Details <span class="required">*</span></label>
+                    <textarea name="${formType}VendorDetails_${formId}" rows="3" placeholder="Name, Mobile#, Address" list="vendorDetailsSuggestions" oninput="updateSuggestions(this, 'vendorDetails')"></textarea>
+                    <datalist id="vendorDetailsSuggestions"></datalist>
+                </div>
+                <div class="form-group">
+                    <label>${titlePrefix} Items <span class="required">*</span></label>
+                    <div class="table-responsive">
+                        <table class="invoice-items-table">
+                            <thead>
+                                <tr><th>Description</th><th>Expense Type</th><th>Site Name</th><th>UOM</th><th>QTY</th><th>Rate</th><th>Amount</th><th>Action</th></tr>
+                            </thead>
+                            <tbody id="${itemTableBodyId}"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="add-item-row-btn" onclick="${addItemFunction}">+ Add Item</button>
+                    <div class="invoice-total">Total Amount: <span id="${totalAmountId}">0.00</span></div>
+                </div>
+                <div class="form-group">
+                    <label>Attach ${titlePrefix} File(s) <span class="required">*</span></label>
+                    <div class="file-upload" onclick="document.getElementById('${fileInputId}').click()">
+                        <input type="file" id="${fileInputId}" accept="image/*,application/pdf" onchange="updateFileNameDisplay(this, ${formId})" multiple>
+                        <p>📎 Add File(s)</p>
+                        <div class="file-info">Upload supported file(s). Max 10 MB per file.</div>
+                        <div id="fileList_${formId}" class="file-list"></div>
+                    </div>
+                </div>`;
+        }
+
+        /**
+         * Adds a new item row to the expense table for a given form.
+         * @param {number} formId The ID of the parent form (invoice).
+         * @param {string} formType The type of the parent form ('invoice').
+         */
+        function addExpenseItem(formId, formType) {
+            invoiceItemCount[formId]++;
+            const itemIndex = invoiceItemCount[formId];
+            const tableBody = document.getElementById(`${formType}ItemsTableBody_${formId}`);
+            const expenseTypeOptionsHtml = expenseTypeDetailOptions.map(opt => `<option value="${opt.value}">${opt.text}</option>`).join('');
+            
+            // Generate site name options from the fetched siteNames array
+            let siteNameOptionsHtml = '<option value="">Select Site</option>';
+            if (siteNames && siteNames.length > 0) {
+                siteNames.forEach(site => {
+                    siteNameOptionsHtml += `<option value="${site}">${site}</option>`;
+                });
+            } else {
+                siteNameOptionsHtml += '<option value="" disabled>No sites available</option>';
+            }
+
+            const row = document.createElement('tr');
+            row.setAttribute('data-item-id', itemIndex);
+
+            row.innerHTML = `
+                <td data-label="Description"><textarea name="${formType}_${formId}_description_${itemIndex}" rows="2" placeholder="Description"></textarea></td>
+                <td data-label="Expense Type"><select name="${formType}_${formId}_expenseType_${itemIndex}">${expenseTypeOptionsHtml}</select></td>
+                <td data-label="Site Name">
+                    <select name="${formType}_${formId}_siteName_${itemIndex}" class="site-name-dropdown">
+                        ${siteNameOptionsHtml}
+                    </select>
+                </td>
+                <td data-label="UOM">
+                    <select name="${formType}_${formId}_uom_${itemIndex}">
+                        <option value="">UOM</option><option value="Kilogram (kg)">Kilogram (kg)</option><option value="Gram (g)">Gram (g)</option>
+                        <option value="Liters (l)">Liters (l)</option><option value="Foot (ft)">Foot (ft)</option><option value="Meters (m)">Meters (m)</option>
+                        <option value="Dozen (Dz)">Dozen (Dz)</option><option value="Box">Box</option><option value="Unit (pcs)">Unit (pcs)</option>
+                        <option value="Inchs (In)">Inchs (In)</option><option value="per head">per head</option>
+                    </select>
+                </td>
+                <td data-label="QTY"><input type="number" name="${formType}_${formId}_qty_${itemIndex}" placeholder="Qty" step="0.01" oninput="calculateExpenseItemAmount(${formId}, ${itemIndex}, '${formType}')"></td>
+                <td data-label="Rate"><input type="number" name="${formType}_${formId}_rate_${itemIndex}" placeholder="Rate" step="0.01" oninput="calculateExpenseItemAmount(${formId}, ${itemIndex}, '${formType}')"></td>
+                <td data-label="Amount"><input type="number" name="${formType}_${formId}_amount_${itemIndex}" readonly step="0.01"></td>
+                <td data-label="Action"><button type="button" class="remove-item-row-btn" onclick="removeExpenseItem(${formId}, ${itemIndex}, '${formType}')">X</button></td>`;
+            tableBody.appendChild(row);
+        }
+
+        /**
+         * Removes an item row from the expense table.
+         * @param {number} formId The ID of the parent form.
+         * @param {number} itemIndex The index of the item to remove.
+         * @param {string} formType The type of the parent form ('invoice').
+         */
+        function removeExpenseItem(formId, itemIndex, formType) {
+            const rowToRemove = document.querySelector(`#${formType}ItemsTableBody_${formId} tr[data-item-id="${itemIndex}"]`);
+            if (rowToRemove) {
+                rowToRemove.remove();
+                calculateExpenseTotal(formId, formType);
+            }
+        }
+
+        /**
+         * Calculates the amount for a single expense item (Qty * Rate).
+         * @param {number} formId The ID of the parent form.
+         * @param {number} itemIndex The index of the item.
+         * @param {string} formType The type of the parent form.
+         */
+        function calculateExpenseItemAmount(formId, itemIndex, formType) {
+            const qtyInput = document.querySelector(`[name="${formType}_${formId}_qty_${itemIndex}"]`);
+            const rateInput = document.querySelector(`[name="${formType}_${formId}_rate_${itemIndex}"]`);
+            const amountInput = document.querySelector(`[name="${formType}_${formId}_amount_${itemIndex}"]`);
+            const qty = parseFloat(qtyInput.value) || 0;
+            const rate = parseFloat(rateInput.value) || 0;
+            amountInput.value = (qty * rate).toFixed(2);
+            calculateExpenseTotal(formId, formType);
+        }
+
+        /**
+         * Calculates the total amount for all items within a specific form.
+         * @param {number} formId The ID of the form.
+         * @param {string} formType The type of the form.
+         */
+        function calculateExpenseTotal(formId, formType) {
+            let total = 0;
+            document.querySelectorAll(`[name^="${formType}_${formId}_amount_"]`).forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+            document.getElementById(`${formType}TotalAmount_${formId}`).textContent = total.toFixed(2);
+        }
+
+        /**
+         * Validates all required fields in the form before submission.
+         * @returns {boolean} True if the form is valid, false otherwise.
+         */
+        function validateForm() {
+            let isValid = true;
+            clearValidationErrors(); // Clear previous errors
+
+            // Validate Project Details
+            const projectType = document.getElementById('projectType');
+            if (projectType.value === '') {
+                markInvalid(projectType);
+                isValid = false;
+            } else {
+                markValid(projectType);
+            }
+
+            const siteNatureGroup = document.getElementById('siteNatureGroup');
+            if (!siteNatureGroup.classList.contains('hidden')) { // Only validate if visible
+                const siteNature = document.getElementById('siteNature');
+                if (siteNature.value === '') {
+                    markInvalid(siteNature);
+                    isValid = false;
+                } else {
+                    markValid(siteNature);
+                }
+            }
+
+            const activeFormType = 'invoice'; 
+            const formContainers = document.querySelectorAll(`[data-form-type="${activeFormType}"]`);
+
+            if (formContainers.length === 0) {
+                showErrorMessage('Please add at least one Bill Form.');
+                return false;
+            }
+
+            for (const container of formContainers) {
+                const formId = parseInt(container.getAttribute('data-form-id'));
+
+                // Validate main form fields
+                const dateInput = container.querySelector(`[name="${activeFormType}Date_${formId}"]`);
+                const approvedByInput = container.querySelector(`[name="${activeFormType}ApprovedBy_${formId}"]`);
+                const vendorDetailsInput = container.querySelector(`[name="${activeFormType}VendorDetails_${formId}"]`);
+                const invoiceNumberInput = container.querySelector(`[name="invoiceNumber_${formId}"]`);
+                const fileInput = container.querySelector(`[id="${activeFormType}FileInput_${formId}"]`);
+                const fileListDiv = document.getElementById(`fileList_${formId}`);
+
+
+                if (dateInput && dateInput.value === '') { markInvalid(dateInput); isValid = false; } else { markValid(dateInput); }
+                if (invoiceNumberInput && invoiceNumberInput.value === '') { markInvalid(invoiceNumberInput); isValid = false; } else { markValid(invoiceNumberInput); }
+                if (approvedByInput && approvedByInput.value === '') { markInvalid(approvedByInput); isValid = false; } else { markValid(approvedByInput); }
+                if (vendorDetailsInput && vendorDetailsInput.value === '') { markInvalid(vendorDetailsInput); isValid = false; } else { markValid(vendorDetailsInput); }
+                
+                // Validate file attachment
+                if (!invoiceFiles[formId] || invoiceFiles[formId].length === 0) {
+                    fileInput.closest('.file-upload').classList.add('error-field'); // Highlight the file upload area
+                    if (fileListDiv) fileListDiv.innerHTML = '<span style="color: #d93025;">Please attach at least one file.</span>';
+                    isValid = false;
+                } else {
+                     fileInput.closest('.file-upload').classList.remove('error-field');
+                     // Remove error message if files are now present
+                     if (fileListDiv) {
+                         const errorMessageSpan = fileListDiv.querySelector('span[style="color: #d93025;"]');
+                         if (errorMessageSpan) errorMessageSpan.remove();
+                     }
+                }
+
+                // Validate item rows
+                const itemRows = container.querySelectorAll(`#${activeFormType}ItemsTableBody_${formId} tr`);
+                if (itemRows.length === 0) {
+                    showErrorMessage('Please add at least one item to Bill #' + formId);
+                    isValid = false;
+                } else {
+                    itemRows.forEach(row => {
+                        const idx = row.getAttribute('data-item-id');
+                        const descriptionInput = row.querySelector(`[name="${activeFormType}_${formId}_description_${idx}"]`);
+                        const expenseTypeSelect = row.querySelector(`[name="${activeFormType}_${formId}_expenseType_${idx}"]`);
+                        const siteNameSelect = row.querySelector(`[name="${activeFormType}_${formId}_siteName_${idx}"]`);
+                        const uomSelect = row.querySelector(`[name="${activeFormType}_${formId}_uom_${idx}"]`);
+                        const qtyInput = row.querySelector(`[name="${activeFormType}_${formId}_qty_${idx}"]`);
+                        const rateInput = row.querySelector(`[name="${activeFormType}_${formId}_rate_${idx}"]`);
+                        
+                        if (descriptionInput && descriptionInput.value === '') { markInvalid(descriptionInput); isValid = false; } else { markValid(descriptionInput); }
+                        if (expenseTypeSelect && expenseTypeSelect.value === '') { markInvalid(expenseTypeSelect); isValid = false; } else { markValid(expenseTypeSelect); }
+                        if (siteNameSelect && siteNameSelect.value === '') { markInvalid(siteNameSelect); isValid = false; } else { markValid(siteNameSelect); }
+                        if (uomSelect && uomSelect.value === '') { markInvalid(uomSelect); isValid = false; } else { markValid(uomSelect); }
+                        if (qtyInput && (qtyInput.value === '' || parseFloat(qtyInput.value) <= 0)) { markInvalid(qtyInput); isValid = false; } else { markValid(qtyInput); }
+                        if (rateInput && (rateInput.value === '' || parseFloat(rateInput.value) <= 0)) { markInvalid(rateInput); isValid = false; } else { markValid(rateInput); }
+                    });
+                }
+            }
+            if (!isValid) {
+                showErrorMessage('Please fill in all required fields and correct errors.');
+            }
+            return isValid;
+        }
+
+        /**
+         * Adds 'error-field' class to an input element to highlight it as invalid.
+         * @param {HTMLElement} inputElement The input element to mark.
+         */
+        function markInvalid(inputElement) {
+            if (inputElement) {
+                inputElement.classList.add('error-field');
+            }
+        }
+
+        /**
+         * Removes 'error-field' class from an input element.
+         * @param {HTMLElement} inputElement The input element to mark as valid.
+         */
+        function markValid(inputElement) {
+            if (inputElement) {
+                inputElement.classList.remove('error-field');
+            }
+        }
+
+        /**
+         * Clears all validation error highlights and messages.
+         */
+        function clearValidationErrors() {
+            document.querySelectorAll('.error-field').forEach(el => {
+                el.classList.remove('error-field');
+            });
+            document.getElementById('errorMessage').classList.add('hidden');
+            // Also clear file attachment error messages
+            document.querySelectorAll('.file-list span[style="color: #d93025;"]').forEach(el => el.remove());
+        }
+
+        /**
+         * Uploads a file to Supabase Storage.
+         * @param {File} file The file object to upload.
+         * @param {string} path The path in the storage bucket (e.g., 'expenses/user123/bill_1/image.jpg').
+         * @returns {Promise<string|null>} The public URL of the uploaded file, or null on error.
+         */
+        async function uploadFileToSupabase(file, path) {
+            if (!supabase) {
+                console.error('Supabase client not initialized');
+                return null;
+            }
+
+            try {
+                const { data, error } = await supabase.storage
+                    .from('expense-attachments') // Changed bucket name to 'expense-attachments'
+                    .upload(path, file, {
+                        cacheControl: '3600',
+                        upsert: false // Set to true if you want to overwrite existing files with the same name
+                    });
+
+                if (error) {
+                    console.error('Error uploading file:', error);
+                    return null;
+                }
+
+                // Get the public URL
+                const { data: publicUrlData } = supabase.storage
+                    .from('expense-attachments') // Changed bucket name to 'expense-attachments'
+                    .getPublicUrl(path);
+                
+                return publicUrlData.publicUrl;
+
+            } catch (err) {
+                console.error('Exception during file upload:', err);
+                return null;
+            }
+        }
+
+        /**
+         * Handles the form submission, collects data, and sends it to Supabase.
+         * @param {Event} e The submit event.
+         */
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            if (!supabase) {
+                showErrorMessage('Database connection not available. Please refresh the page.');
+                return;
+            }
+
+            const form = e.target;
+            form.classList.add('loading');
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+
+            // Perform client-side validation
+            if (!validateForm()) {
+                form.classList.remove('loading');
+                return; // Stop submission if validation fails
+            }
+            
+            const formData = new FormData(form);
+            const projectType = formData.get('projectType');
+            const siteNature = formData.get('siteNature');
+            const recordsToInsert = [];
+
+            const activeFormType = 'invoice'; 
+            const formContainers = document.querySelectorAll(`[data-form-type="${activeFormType}"]`);
+
+            try {
+                for (const container of formContainers) {
+                    const formId = parseInt(container.getAttribute('data-form-id'));
+                    const billDate = formData.get(`${activeFormType}Date_${formId}`);
+                    const invoiceNumber = formData.get(`invoiceNumber_${formId}`);
+                    const approvedBy = formData.get(`${activeFormType}ApprovedBy_${formId}`);
+                    const vendorDetails = formData.get(`${activeFormType}VendorDetails_${formId}`);
+
+                    // Add to cache after extracting values
+                    addToCache(approvedBy, 'approvedBy');
+                    addToCache(vendorDetails, 'vendorDetails');
+
+                    let attachmentUrls = [];
+                    if (invoiceFiles[formId] && invoiceFiles[formId].length > 0) {
+                        for (const file of invoiceFiles[formId]) {
+                            // Create a unique path for each file: expenses/{userId}/{invoiceNumber}/{timestamp_filename}
+                            const filePath = `${userId}/${invoiceNumber}/${Date.now()}_${file.name}`;
+                            const publicUrl = await uploadFileToSupabase(file, filePath);
+                            if (publicUrl) {
+                                attachmentUrls.push(publicUrl);
+                            } else {
+                                throw new Error(`Failed to upload file: ${file.name}`);
+                            }
+                        }
+                    }
+                    const attachmentUrlString = attachmentUrls.join(','); // Store as comma-separated string
+
+                    const itemRows = container.querySelectorAll(`#${activeFormType}ItemsTableBody_${formId} tr`);
+                    if (itemRows.length === 0) {
+                        throw new Error(`Bill #${formId} must have at least one item.`);
+                    }
+
+                    itemRows.forEach(row => {
+                        const idx = row.getAttribute('data-item-id');
+                        const expenseType = formData.get(`${activeFormType}_${formId}_expenseType_${idx}`);
+                        const itemDescription = itemDescriptionMapping[expenseType] || '';
+
+                        recordsToInsert.push({
+                            user_id: userId,
+                            project_type: projectType,
+                            site_nature: siteNature,
+                            expense_nature: 'Invoice', // Fixed as per form
+                            bill_no: invoiceNumber,
+                            bill_date: billDate,
+                            description: formData.get(`${activeFormType}_${formId}_description_${idx}`),
+                            item_description: itemDescription,
+                            expense_type: expenseType,
+                            site: formData.get(`${activeFormType}_${formId}_siteName_${idx}`),
+                            uom: formData.get(`${activeFormType}_${formId}_uom_${idx}`),
+                            qty: parseFloat(formData.get(`${activeFormType}_${formId}_qty_${idx}`)),
+                            rate: parseFloat(formData.get(`${activeFormType}_${formId}_rate_${idx}`)),
+                            // amount is generated by DB, so no need to send it
+                            approved_by: approvedBy,
+                            vendor_details: vendorDetails,
+                            attachment_url: attachmentUrlString,
+                            status: 'Pending', // Default status
+                            remarks: '' // No remarks field in form
+                        });
+                    });
+                }
+
+                // Insert all collected records into Supabase
+                const { data, error } = await supabase
+                    .from('expense_entries')
+                    .insert(recordsToInsert);
+
+                if (error) {
+                    console.error('Supabase insert error:', error);
+                    showErrorMessage('Failed to save data: ' + error.message);
+                } else {
+                    showSuccessMessage('Expense entries submitted successfully!');
+                    clearForm();
+                }
+
+            } catch (err) {
+                console.error('Form submission error:', err);
+                showErrorMessage('An error occurred during submission: ' + err.message);
+            } finally {
+                form.classList.remove('loading');
+            }
+        }
+
+        /**
+         * Displays a success message to the user.
+         * @param {string} message The success message.
+         */
+        function showSuccessMessage(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.classList.remove('hidden');
+            setTimeout(() => { successDiv.classList.add('hidden'); }, 5000);
+        }
+
+        /**
+         * Displays an error message to the user.
+         * @param {string} message The error message.
+         */
+        function showErrorMessage(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => { errorDiv.classList.add('hidden'); }, 5000);
+        }
+
+        /**
+         * Clears all form fields and resets the form to its initial state.
+         */
+        function clearForm() {
+            document.getElementById('expenseForm').reset();
+            document.getElementById('invoicesContainer').innerHTML = '';
+            invoiceCount = 0;
+            invoiceItemCount = {};
+            invoiceFiles = {}; // Clear stored file data
+            addInvoice(); // Re-add initial forms
+            updateSiteNatureDropdown(); // Still needed to update site nature based on project type
+            // Reset file upload display and clear file lists
+            document.querySelectorAll('.file-info').forEach(el => {
+                el.textContent = 'Upload supported file(s). Max 10 MB per file.';
+            });
+            document.querySelectorAll('.file-list').forEach(el => {
+                el.innerHTML = ''; // Clear displayed file names
+            });
+            clearValidationErrors(); // Clear validation errors on clear form
+        }
+
+        /**
+         * Updates the datalist suggestions based on user input and cache.
+         * @param {HTMLInputElement|HTMLTextAreaElement} inputElement The input field.
+         * @param {string} cacheType 'vendorDetails' or 'approvedBy'.
+         */
+        function updateSuggestions(inputElement, cacheType) {
+            const datalist = document.getElementById(cacheType + 'Suggestions');
+            if (!datalist) return;
+
+            let cache;
+            if (cacheType === 'vendorDetails') {
+                cache = vendorDetailsCache;
+            } else if (cacheType === 'approvedBy') {
+                cache = approvedByCache;
+            }
+
+            datalist.innerHTML = ''; // Clear previous suggestions
+            const inputValue = inputElement.value.toLowerCase();
+            if (inputValue.length > 0) {
+                Array.from(cache).forEach(item => {
+                    if (item.toLowerCase().includes(inputValue)) {
+                        const option = document.createElement('option');
+                        option.value = item;
+                        datalist.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        /**
+         * Adds a value to the specified cache and saves it to localStorage.
+         * @param {string} value The value to add to the cache.
+         * @param {string} cacheType 'vendorDetails' or 'approvedBy'.
+         */
+        function addToCache(value, cacheType) {
+            let cache;
+            if (cacheType === 'vendorDetails') {
+                cache = vendorDetailsCache;
+            } else if (cacheType === 'approvedBy') {
+                cache = approvedByCache;
+            }
+
+            if (value && !cache.has(value)) {
+                cache.add(value);
+                localStorage.setItem(cacheType + 'Cache', JSON.stringify(Array.from(cache)));
+            }
+        }
+
+        // Add this to the DOMContentLoaded listener
+        const menuToggle = document.createElement('div');
+        menuToggle.className = 'menu-toggle';
+        menuToggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+        document.body.prepend(menuToggle); // Add to the beginning of body
+
+        menuToggle.addEventListener('click', () => {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+            document.body.classList.toggle('sidebar-open'); // Add class to body
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Enter Site Details - HS Priat Software</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="auth-guard.js" defer></script>
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            display: flex;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            width: calc(100% - 260px);
+        }
+
+        .form-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #16a085; /* Darker Teal */
+            border-color: #16a085;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html" class="active"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <h1>Enter Site Details</h1>
+        <p class="text-muted mb-4">Please enter all the initial data accurately to create a site.</p>
+        
+        <div class="form-container">
+            <form id="site-details-form" class="row g-3">
+                <div class="col-md-4"><label for="site-code" class="form-label">Site Code</label><input type="text" class="form-control" id="site-code" placeholder="Enter Site Code"></div>
+                <div class="col-md-4"><label for="site-name" class="form-label">Site Name</label><input type="text" class="form-control" id="site-name" placeholder="Enter Site Name"></div>
+                <div class="col-md-4"><label for="sdo" class="form-label">S/O, D/O, W/O</label><input type="text" class="form-control" id="sdo" placeholder="Enter S/D/w/-O"></div>
+                <div class="col-md-4"><label for="scheme-type" class="form-label">Scheme Type</label><input type="text" class="form-control" id="scheme-type" placeholder="Enter Scheme Type"></div>
+                <div class="col-md-4"><label for="land-holding" class="form-label">Land Holding (Acres)</label><input type="number" class="form-control" id="land-holding" placeholder="Enter Land Holding"></div>
+                <div class="col-md-4"><label for="area" class="form-label">Area (Acres)</label><input type="number" class="form-control" id="area" placeholder="Enter Area"></div>
+                <div class="col-md-4"><label for="crop" class="form-label">Crop</label><input type="text" class="form-control" id="crop" placeholder="Enter Crop"></div>
+                <div class="col-md-8"><label for="address" class="form-label">Address</label><input type="text" class="form-control" id="address" placeholder="Enter Address"></div>
+                <div class="col-md-4"><label for="tehsil" class="form-label">Tehsil</label><input type="text" class="form-control" id="tehsil" placeholder="Enter Tehsil"></div>
+                <div class="col-md-4"><label for="district" class="form-label">District</label><input type="text" class="form-control" id="district" placeholder="Enter District"></div>
+                <div class="col-md-4"><label for="contact-number" class="form-label">Contact Number</label><input type="text" class="form-control" id="contact-number" placeholder="Enter Contact Number"></div>
+                <div class="col-md-4"><label for="cnic" class="form-label">CNIC</label><input type="text" class="form-control" id="cnic" placeholder="Enter CNIC"></div>
+                <div class="col-md-4"><label for="fard-id" class="form-label">Fard ID</label><input type="text" class="form-control" id="fard-id" placeholder="Enter Fard ID"></div>
+                <div class="col-md-4"><label for="project-cost" class="form-label">Project Cost</label><input type="number" class="form-control" id="project-cost" placeholder="Enter Project Cost"></div>
+                <div class="col-md-4"><label for="govt-share" class="form-label">Govt Share</label><input type="number" class="form-control" id="govt-share" placeholder="Enter Govt Share"></div>
+                <div class="col-md-4"><label for="total-farmer-share" class="form-label">Total Farmer Share</label><input type="number" class="form-control" id="total-farmer-share" placeholder="Enter Total Farmer Share"></div>
+                <div class="col-md-4"><label for="material-cost" class="form-label">Material Cost</label><input type="number" class="form-control" id="material-cost" placeholder="Enter Material Cost"></div>
+                <div class="col-md-4"><label for="service-charges" class="form-label">Service Charges</label><input type="number" class="form-control" id="service-charges" placeholder="Enter Service Charges"></div>
+                <div class="col-md-4"><label for="gst-18%" class="form-label">GST 18%</label><input type="number" class="form-control" id="gst-18%" placeholder="Enter GST 18%"></div>
+                <div class="col-md-4"><label for="pst-16%" class="form-label">PST 16%</label><input type="number" class="form-control" id="pst-16%" placeholder="Enter PST 16%"></div>
+                <div class="col-md-4"><label for="in-kind" class="form-label">In Kind</label><input type="number" class="form-control" id="in-kind" placeholder="Enter In Kind"></div>
+                <div class="col-md-4"><label for="in-cash" class="form-label">In Cash</label><input type="number" class="form-control" id="in-cash" placeholder="Enter In Cash"></div>
+                <div class="col-md-4"><label for="recieved-farmer-share" class="form-label">Received Farmer Share</label><input type="number" class="form-control" id="recieved-farmer-share" placeholder="Enter Received Farmer Share"></div>
+                <div class="col-md-4"><label for="bank" class="form-label">Bank</label><input type="text" class="form-control" id="bank" placeholder="Enter Bank Name"></div>
+                <div class="col-md-4"><label for="dd-no" class="form-label">DD No</label><input type="number" class="form-control" id="dd-no" placeholder="Enter DD No"></div>
+                <div class="col-md-4"><label for="dd-date" class="form-label">DD Date</label><input type="date" class="form-control" id="dd-date"></div>
+                <div class="col-md-4"><label for="wo-date" class="form-label">Work Order Date</label><input type="date" class="form-control" id="wo-date"></div>
+                <div class="col-md-4"><label for="wo-no" class="form-label">Work Order No</label><input type="number" class="form-control" id="wo-no" placeholder="Enter Work Order No"></div>
+                <div class="col-md-4"><label for="icr-1-date" class="form-label">ICR-1 Date</label><input type="date" class="form-control" id="icr-1-date"></div>
+                <div class="col-md-4"><label for="icr-1-amount" class="form-label">ICR-1 Amount</label><input type="number" class="form-control" id="icr-1-amount" placeholder="Enter ICR-1 Amount"></div>
+                <div class="col-md-4"><label for="icr-2-date" class="form-label">ICR-2 Date</label><input type="date" class="form-control" id="icr-2-date"></div>
+                <div class="col-md-4"><label for="icr-2-amount" class="form-label">ICR-2 Amount</label><input type="number" class="form-control" id="icr-2-amount" placeholder="Enter ICR-2 Amount"></div>
+                <div class="col-md-4"><label for="longitude" class="form-label">Longitude</label><input type="number" class="form-control" id="longitude" placeholder="Enter Longitude"></div>
+                <div class="col-md-4"><label for="latitude" class="form-label">Latitude</label><input type="number" class="form-control" id="latitude" placeholder="Enter Latitude"></div>
+                <div class="col-md-4"><label for="site-status" class="form-label">Site Status</label><input type="text" class="form-control" id="site-status" placeholder="Enter Site Status"></div>
+                <div class="col-md-4"><label for="technician" class="form-label">Technician</label><input type="text" class="form-control" id="technician" placeholder="Enter Technician Name"></div>
+                <div class="col-md-4"><label for="site_budget" class="form-label">Site Budget</label><input type="text" class="form-control" id="site_budget" placeholder="Enter Site Budget"></div>
+                <div class="col-md-4"><label for="site_supervisor" class="form-label">Site Supervisor</label><input type="text" class="form-control" id="site_supervisor" placeholder="Enter Site Supervisor"></div>
+                <div class="col-md-4"><label for="site_manager" class="form-label">Site Manager</label><input type="text" class="form-control" id="site_manager" placeholder="Enter Site Manager"></div>
+                <div class="col-md-12"><label for="remarks" class="form-label">Remarks</label><textarea class="form-control" id="remarks" rows="3" placeholder="Enter Remarks"></textarea></div>
+                <div class="col-12 mt-4">
+                    <button type="submit" class="btn btn-primary">Submit Details</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const supabase = window.supabase.createClient(
+          'https://mxktarizsqttwwzbqgld.supabase.co',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8'
+        );
+
+        const form = document.getElementById('site-details-form');
+
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const data = {
+            site_code: document.getElementById('site-code').value || null,
+            site_name: document.getElementById('site-name').value || null,
+            sdo: document.getElementById('sdo').value || null,
+            scheme_type: document.getElementById('scheme-type').value || null,
+            land_holding: document.getElementById('land-holding').value ? parseFloat(document.getElementById('land-holding').value) : null,
+            area: document.getElementById('area').value ? parseFloat(document.getElementById('area').value) : null,
+            crop: document.getElementById('crop').value || null,
+            address: document.getElementById('address').value || null,
+            tehsil: document.getElementById('tehsil').value || null,
+            district: document.getElementById('district').value || null,
+            contact_number: document.getElementById('contact-number').value || null,
+            cnic: document.getElementById('cnic').value || null,
+            fard_id: document.getElementById('fard-id').value || null,
+            project_cost: document.getElementById('project-cost').value ? parseFloat(document.getElementById('project-cost').value) : null,
+            govt_share: document.getElementById('govt-share').value ? parseFloat(document.getElementById('govt-share').value) : null,
+            total_farmer_share: document.getElementById('total-farmer-share').value ? parseFloat(document.getElementById('total-farmer-share').value) : null,
+            material_cost: document.getElementById('material-cost').value ? parseFloat(document.getElementById('material-cost').value) : null,
+            service_charges: document.getElementById('service-charges').value ? parseFloat(document.getElementById('service-charges').value) : null,
+            gst_18: document.getElementById('gst-18%').value ? parseFloat(document.getElementById('gst-18%').value) : null,
+            pst_16: document.getElementById('pst-16%').value ? parseFloat(document.getElementById('pst-16%').value) : null,
+            in_kind: document.getElementById('in-kind').value ? parseFloat(document.getElementById('in-kind').value) : null,
+            in_cash: document.getElementById('in-cash').value ? parseFloat(document.getElementById('in-cash').value) : null,
+            recieved_farmer_share: document.getElementById('recieved-farmer-share').value ? parseFloat(document.getElementById('recieved-farmer-share').value) : null,
+            bank: document.getElementById('bank').value || null,
+            dd_no: document.getElementById('dd-no').value ? parseFloat(document.getElementById('dd-no').value) : null,
+            dd_date: document.getElementById('dd-date').value || null,
+            wo_date: document.getElementById('wo-date').value || null,
+            wo_no: document.getElementById('wo-no').value ? parseFloat(document.getElementById('wo-no').value) : null,
+            icr1_date: document.getElementById('icr-1-date').value || null,
+            icr1_amount: document.getElementById('icr-1-amount').value ? parseFloat(document.getElementById('icr-1-amount').value) : null,
+            icr2_date: document.getElementById('icr-2-date').value || null,
+            icr2_amount: document.getElementById('icr-2-amount').value ? parseFloat(document.getElementById('icr-2-amount').value) : null,
+            longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+            latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+            site_status: document.getElementById('site-status').value || null,
+            technician: document.getElementById('technician').value || null,
+            remarks: document.getElementById('remarks').value || null,
+            site_budget: document.getElementById('site_budget').value || null,
+            site_supervisor: document.getElementById('site_supervisor').value || null,
+            site_manager: document.getElementById('site_manager').value || null,
+          };
+
+          const { error } = await supabase.from('site_details').insert([data]);
+
+          if (error) {
+            alert('❌ Error saving data: ' + error.message);
+          } else {
+            alert('✅ Data saved successfully!');
+            form.reset();
+          }
+        });
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

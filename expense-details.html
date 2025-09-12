@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Details</title>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth-guard.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1abc9c; /* Bright Teal */
+            --secondary-color: #95a5a6; /* Cool Silver */
+            --sidebar-bg: #34495e;    /* Wet Asphalt */
+            --body-bg: #ecf0f1;       /* Clouds */
+            --card-bg: #ffffff;
+            --font-family: 'Poppins', sans-serif;
+            --border-color: #dee2e6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--body-bg);
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+        }
+
+        .sidebar {
+            width: fit-content; /* Adjust width to content */
+            min-width: 260px; /* Ensure a minimum width */
+            background-color: var(--sidebar-bg);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .sidebar .logo {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #adb5bd;
+        }
+
+        .sidebar .menu a {
+            color: #dee2e6;
+            text-decoration: none;
+            padding: 12px 15px;
+            display: block;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar .menu a i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar .menu a:hover, .sidebar .menu a.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            width: calc(100% - 260px);
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: normal;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #16a085; /* Darker Teal */
+        }
+
+        .btn-success {
+            background: #2ecc71;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .editable {
+            background-color: #fff3cd;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            z-index: 9999;
+            left: 0; top: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal.hidden { display: none; }
+
+        .modal-content {
+            background: #fff;
+            padding: 0;
+            border-radius: 8px;
+            max-width: 90vw;
+            max-height: 90vh;
+            position: relative;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+            overflow: auto;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 8px; right: 16px;
+            font-size: 2rem;
+            color: #333;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #attachmentViewer {
+            min-width: 60vw;
+            min-height: 60vh;
+            max-width: 80vw;
+            max-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #attachmentViewer img, #attachmentViewer iframe {
+            max-width: 100%;
+            max-height: 80vh;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 class="logo">SMS Pro</h1>
+        <p class="subtitle">Site Management Suite</p>
+        <nav class="menu">
+            <a href="admin-dashboard.html"><i class="fa-solid fa-tachometer-alt"></i> <span>Dashboard</span></a>
+            <a href="site-details.html"><i class="fa-solid fa-plus"></i> <span>Create a Site</span></a>
+            <a href="boq-detail.html"><i class="fa-solid fa-list-check"></i> <span>Enter BOQ Details</span></a>
+            <a href="budget-details.html"><i class="fa-solid fa-coins"></i> <span>Enter Budget Details</span></a>
+            <a href="actual-details.html"><i class="fa-solid fa-chart-line"></i> <span>Enter Actual Details</span></a>
+            <a href="view-site.html"><i class="fa-solid fa-eye"></i> <span>View Sites</span></a>
+            <a href="documentation.html"><i class="fa-solid fa-book"></i> <span>Documentation</span></a>
+            <a href="expense-form.html"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Expense Form</span></a>
+            <a href="expense-details.html" class="active"><i class="fa-solid fa-money-check-dollar"></i> <span>Expense Details</span></a>
+            <a href="site_completion_details.html"><i class="fa-solid fa-flag-checkered"></i> <span>Site Completion</span></a>
+            <a href="icr_1&_icr2_details.html"><i class="fa-solid fa-file-signature"></i> <span>ICR Details</span></a>
+            <a href="invoices.html"><i class="fa-solid fa-file-signature"></i> <span>Invoices</span></a>
+            <a href="payment-details.html"><i class="fa-solid fa-money-bill-wave"></i> <span>Payment Details</span></a>
+            <a href="stock-details.html"><i class="fa-solid fa-boxes-stacked"></i> <span>Stock Details</span></a>
+            <a href="site-progress.html"><i class="fa-solid fa-chart-simple"></i> <span>Site Progress</span></a>
+            <a href="survey-responses.html"><i class="fa-solid fa-clipboard-list"></i> <span>Survey Responses</span></a>
+            <a href="design-management.html"><i class="fa-solid fa-ruler-combined"></i> <span>Design Management</span></a>
+        </nav>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Expense Details</h1>
+                <p>View and edit expense entries by site</p>
+            </div>
+
+            <!-- Messages -->
+            <div id="successMessage" class="message success hidden"></div>
+            <div id="errorMessage" class="message error hidden"></div>
+
+            <!-- Site Selection -->
+            <div class="form-group">
+                <label for="siteSelect">Select Site:</label>
+                <select id="siteSelect">
+                    <option value="">Choose a site...</option>
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-group">
+                <button id="loadDataBtn" class="btn" onclick="loadExpenseData()">Load Data</button>
+                <button id="editModeBtn" class="btn" onclick="toggleEditMode()">Enable Edit Mode</button>
+                <button id="saveChangesBtn" class="btn btn-success hidden" onclick="saveChanges()">Save Changes</button>
+                <button id="cancelEditBtn" class="btn hidden" onclick="cancelEdit()">Cancel</button>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+                <div id="noDataMessage" class="no-data hidden">
+                    <p>No expense entries found for the selected site.</p>
+                </div>
+                <table id="expenseTable" class="hidden">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Bill No</th>
+                            <th>Bill Date</th>
+                            <th>Description</th>
+                            <th>Expense Type</th>
+                            <th>UOM</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                            <th>Approved By</th>
+                            <th>Vendor Details</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                            <th>Project Type</th>
+                            <th>Attachment</th>
+                            <th>Submitted At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenseTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add this just before </body> -->
+    <div id="attachmentModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModalBtn">&times;</span>
+            <div id="attachmentViewer"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("Script block is executing.");
+        // Global variables
+        let supabase = null;
+        let siteNames = [];
+        let expenseData = [];
+        let originalData = [];
+        let isEditMode = false;
+
+        // Supabase configuration
+        const SUPABASE_URL = 'https://mxktarizsqttwwzbqgld.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
+
+        // Initialize Supabase client safely
+        function initializeSupabase() {
+            console.log("Attempting to initialize Supabase...");
+            try {
+                if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('Supabase client initialized successfully');
+                    return true;
+                } else {
+                    console.error('Supabase library not loaded properly');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+                return false;
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', async function() {
+            let retryCount = 0;
+            const maxRetries = 10;
+            
+            const initSupabase = () => {
+                if (initializeSupabase()) {
+                    initializeApp();
+                } else if (retryCount < maxRetries) {
+                    retryCount++;
+                    console.log(`Retrying Supabase initialization... (${retryCount}/${maxRetries})`);
+                    setTimeout(initSupabase, 500);
+                } else {
+                    console.error('Failed to initialize Supabase after maximum retries');
+                    showErrorMessage('Failed to initialize database connection. Please refresh the page.');
+                }
+            };
+            
+            initSupabase();
+        });
+
+        async function initializeApp() {
+            console.log("initializeApp called");
+            try {
+                await fetchSiteNames();
+                setupEventListeners();
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showErrorMessage('Error initializing application. Please refresh the page.');
+            }
+        }
+
+        // Fetch site names from the database
+        async function fetchSiteNames() {
+            if (!supabase) {
+                showErrorMessage('Database connection not available.');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from("site_details")
+                    .select("site_name")
+                    .order("site_name");
+
+                console.log("Supabase site_details data:", data);
+                console.log("Supabase site_details error:", error);
+
+                if (error) {
+                    console.error('Error fetching site names:', error);
+                    showErrorMessage('Failed to load site names.');
+                    return;
+                }
+
+                if (data && Array.isArray(data)) {
+                    siteNames = data.map(row => row.site_name).filter(name => name);
+                    populateSiteDropdown();
+                } else {
+                    siteNames = [];
+                    showErrorMessage('No sites found in the database.');
+                }
+            } catch (err) {
+                console.error('Exception fetching site names:', err);
+                showErrorMessage('An error occurred while fetching site names.');
+            }
+        }
+
+        // Populate the site dropdown
+        function populateSiteDropdown() {
+            const siteSelect = document.getElementById('siteSelect');
+            siteSelect.innerHTML = '<option value="">Choose a site...</option>';
+            
+            siteNames.forEach(siteName => {
+                const option = document.createElement('option');
+                option.value = siteName;
+                option.textContent = siteName;
+                siteSelect.appendChild(option);
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('siteSelect').addEventListener('change', function() {
+                const selectedSite = this.value;
+                if (selectedSite) {
+                    document.getElementById('loadDataBtn').disabled = false;
+                } else {
+                    document.getElementById('loadDataBtn').disabled = true;
+                    hideTable();
+                }
+            });
+        }
+
+        // Load expense data for selected site
+        async function loadExpenseData() {
+            const selectedSite = document.getElementById('siteSelect').value;
+            if (!selectedSite) {
+                showErrorMessage('Please select a site first.');
+                return;
+            }
+
+            if (!supabase) {
+                showErrorMessage('Database connection not available.');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                hideMessages();
+
+                // Fetch all columns (or specify columns if you want a subset)
+                const { data, error } = await supabase
+                    .from("expense_entries")
+                    .select('*') // or .select('project_type, ..., submitted_at')
+                    .eq("site", selectedSite)
+                    .order("id", { ascending: false });
+
+                if (error) {
+                    showErrorMessage('Failed to load expense data.');
+                    return;
+                }
+
+                expenseData = data || [];
+                originalData = JSON.parse(JSON.stringify(expenseData)); // Deep copy
+                populateTable();
+
+                if (expenseData.length === 0) {
+                    showNoDataMessage();
+                } else {
+                    showSuccessMessage(`Loaded ${expenseData.length} expense entries for ${selectedSite}.`);
+                }
+
+            } catch (err) {
+                showErrorMessage('An error occurred while loading expense data.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Update populateTable to include attachment column and popup logic
+        function populateTable() {
+            const tableBody = document.getElementById("expenseTableBody");
+            const table = document.getElementById("expenseTable");
+            const noDataDiv = document.getElementById("noDataMessage");
+
+            tableBody.innerHTML = "";
+
+            if (expenseData.length === 0) {
+                table.classList.add("hidden");
+                noDataDiv.classList.remove("hidden");
+                return;
+            }
+
+            table.classList.remove("hidden");
+            noDataDiv.classList.add("hidden");
+
+            expenseData.forEach((row, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${row.id ?? ''}</td>
+                    <td>${row.bill_no ?? ''}</td>
+                    <td>${row.bill_date ?? ''}</td>
+                    <td>${row.description ?? ''}</td>
+                    <td>${row.expense_type ?? ''}</td>
+                    <td>${row.uom ?? ''}</td>
+                    <td>${row.qty ?? ''}</td>
+                    <td>${row.rate ?? ''}</td>
+                    <td>${row.amount ?? ''}</td>
+                    <td>${row.approved_by ?? ''}</td>
+                    <td>${row.vendor_details ?? ''}</td>
+                    <td>${row.status ?? ''}</td>
+                    <td>${row.remarks ?? ''}</td>
+                    <td>${row.project_type ?? ''}</td>
+                    <td>
+                        ${row.attachment_url ? `<a href="#" class="view-attachment" data-url="${row.attachment_url}">View</a>` : ''}
+                    </td>
+                    <td>${row.submitted_at ?? ''}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // Add event listeners for attachment links
+            document.querySelectorAll('.view-attachment').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('data-url');
+                    showAttachmentModal(url);
+                });
+            });
+        }
+
+        // Modal logic
+        function showAttachmentModal(url) {
+            const modal = document.getElementById('attachmentModal');
+            const viewer = document.getElementById('attachmentViewer');
+            viewer.innerHTML = '';
+
+            // Show image if it's an image, otherwise use iframe
+            if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url)) {
+                viewer.innerHTML = `<img src="${url}" alt="Attachment" />`;
+            } else {
+                viewer.innerHTML = `<iframe src="${url}" width="100%" height="600px"></iframe>`;
+            }
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('closeModalBtn').onclick = function() {
+            document.getElementById('attachmentModal').classList.add('hidden');
+            document.getElementById('attachmentViewer').innerHTML = '';
+        };
+
+        // Optional: close modal on background click
+        document.getElementById('attachmentModal').onclick = function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                document.getElementById('attachmentViewer').innerHTML = '';
+            }
+        };
+
+        // Helper functions for messages and loading states
+        function showSuccessMessage(message) {
+            const successMessage = document.getElementById('successMessage');
+            successMessage.textContent = message;
+            successMessage.classList.remove('hidden');
+            setTimeout(() => successMessage.classList.add('hidden'), 5000);
+        }
+
+        function showErrorMessage(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => errorMessage.classList.add('hidden'), 5000);
+        }
+
+        function hideMessages() {
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showLoading(isLoading) {
+            const loadDataBtn = document.getElementById('loadDataBtn');
+            const siteSelect = document.getElementById('siteSelect');
+            if (isLoading) {
+                loadDataBtn.textContent = 'Loading...';
+                loadDataBtn.disabled = true;
+                siteSelect.disabled = true;
+            } else {
+                loadDataBtn.textContent = 'Load Data';
+                loadDataBtn.disabled = false;
+                siteSelect.disabled = false;
+            }
+        }
+
+        function hideTable() {
+            document.getElementById('expenseTable').classList.add('hidden');
+            document.getElementById('noDataMessage').classList.remove('hidden');
+        }
+
+        function showNoDataMessage() {
+            document.getElementById('expenseTable').classList.add('hidden');
+            document.getElementById('noDataMessage').classList.remove('hidden');
+        }
+
+        // Edit Mode functions
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const editModeBtn = document.getElementById('editModeBtn');
+            const saveChangesBtn = document.getElementById('saveChangesBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+            if (isEditMode) {
+                editModeBtn.textContent = 'Disable Edit Mode';
+                saveChangesBtn.classList.remove('hidden');
+                cancelEditBtn.classList.remove('hidden');
+            } else {
+                editModeBtn.textContent = 'Enable Edit Mode';
+                saveChangesBtn.classList.add('hidden');
+                cancelEditBtn.classList.add('hidden');
+            }
+
+            const inputs = document.querySelectorAll('#expenseTableBody input, #expenseTableBody textarea');
+            inputs.forEach(input => {
+                const field = input.dataset.field;
+                if (field !== 'id') { // Prevent editing the ID field
+                    input.readOnly = !isEditMode;
+                    if (isEditMode) {
+                        input.classList.add('editable');
+                    } else {
+                        input.classList.remove('editable');
+                    }
+                }
+            });
+        }
+
+        async function saveChanges() {
+            if (!supabase) {
+                showErrorMessage('Database connection not available.');
+                return;
+            }
+
+            showLoading(true);
+            hideMessages();
+
+            const updates = [];
+            const inputs = document.querySelectorAll('#expenseTableBody input, #expenseTableBody textarea');
+
+            inputs.forEach(input => {
+                const index = parseInt(input.dataset.index);
+                const field = input.dataset.field;
+                const newValue = input.value;
+
+                if (originalData[index] && originalData[index][field] !== newValue) {
+                    // Only add to updates if the value has actually changed
+                    if (!updates[index]) {
+                        updates[index] = { id: expenseData[index].id };
+                    }
+                    updates[index][field] = newValue;
+                }
+            });
+
+            // Filter out empty updates (where only id was set but no other fields changed)
+            const filteredUpdates = updates.filter(update => update && Object.keys(update).length > 1);
+
+            if (filteredUpdates.length === 0) {
+                showSuccessMessage('No changes to save.');
+                showLoading(false);
+                return;
+            }
+
+            try {
+                for (const update of filteredUpdates) {
+                    const { data, error } = await supabase
+                        .from('expense_entries')
+                        .update(update)
+                        .eq('id', update.id);
+
+                    if (error) {
+                        console.error('Error updating record:', error);
+                        throw new Error(`Failed to update record with ID ${update.id}: ${error.message}`);
+                    }
+                }
+                showSuccessMessage(`Successfully saved ${filteredUpdates.length} changes.`);
+                // Re-fetch data to ensure UI is in sync with DB, and reset originalData
+                await loadExpenseData(); 
+            } catch (err) {
+                console.error('Exception saving changes:', err);
+                showErrorMessage(`Error saving changes: ${err.message}`);
+            } finally {
+                showLoading(false);
+                toggleEditMode(); // Exit edit mode after saving
+            }
+        }
+
+        function cancelEdit() {
+            // Revert expenseData to originalData
+            expenseData = JSON.parse(JSON.stringify(originalData));
+            populateTable(); // Re-populate table with original data
+            toggleEditMode(); // Exit edit mode
+            showSuccessMessage('Changes cancelled.');
+        }
+
+        async function getSignedUrl(filePath) {
+            const { data, error } = await supabase
+                .storage
+                .from('expense-attachments')
+                .createSignedUrl(filePath, 60); // valid for 60 seconds
+            if (data?.signedUrl) {
+                return data.signedUrl;
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>
