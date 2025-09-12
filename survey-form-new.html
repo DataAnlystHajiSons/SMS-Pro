@@ -625,6 +625,12 @@
                             <input type="number" class="form-control" id="waterTableDepth" name="waterTableDepth" min="0" step="0.1">
                         </div>
                         <div class="col-md-6 mb-3">
+                            <label for="fardId" class="form-label">Fard Id</label>
+                            <input type="text" class="form-control" id="fardId" name="fardId">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Is Farmer Interested? <span class="text-danger">*</span></label>
                             <div class="mt-2">
                                 <div class="form-check form-check-inline">
@@ -826,7 +832,8 @@
                     water_source: formData.get('waterSource') || null,
                     water_table_depth: formData.get('waterTableDepth') ? parseFloat(formData.get('waterTableDepth')) : null,
                     is_farmer_interested: formData.get('farmerInterested') === 'true',
-                    remarks_comments: formData.get('remarks') || null
+                    remarks_comments: formData.get('remarks') || null,
+                    fard_id: formData.get('fardId') || null
                 };
 
                 if (cnicUrl) {
@@ -952,6 +959,7 @@
                 document.getElementById('waterTableDepth').value = data.water_table_depth || '';
                 document.querySelector(`input[name="farmerInterested"][value="${data.is_farmer_interested}"]`).checked = true;
                 document.getElementById('remarks').value = data.remarks_comments || '';
+                document.getElementById('fardId').value = data.fard_id || '';
 
                 // Handle CNIC picture
                 if (data.cnic_url) {
