@@ -545,7 +545,7 @@
         await fetchUserAndUsers();
 
         // First, try to fetch survey forms with user data
-        let query = supabaseClient.from('survey_forms').select(`
+        let query = supabaseClient.from('survey_forms').select (`
             *,
             crop_1 (*),
             crop_2 (*),
