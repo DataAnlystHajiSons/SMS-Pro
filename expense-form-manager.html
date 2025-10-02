@@ -593,10 +593,7 @@
         const SUPABASE_URL = 'https://mxktarizsqttwwzbqgld.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a3Rhcml6c3F0dHd3emJxZ2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2NDA3MTMsImV4cCI6MjA2ODIxNjcxM30.UKA9NjB8mlxYJjzaC0cMnPGREcEAf-NQ3AeRWNWeuP8';
         
-        // IMPORTANT: Replace 'YOUR_USER_ID_FROM_DASHBOARD' with the actual user ID from your dashboard's auth context.
-        // This userId will be used for associating expense entries and for file storage paths.
-        // For testing, I'm using the provided ID. In a real app, this would come from the authenticated user session.
-        const userId = '2cc75313-53cf-4c8b-b197-89b1fe94e0ad'; 
+        // The user ID will be fetched from the authenticated session during form submission.
 
         const siteNatureOptions = {
             'PRIAT': [{ value: 'PRIAT - SOLAR', text: 'PRIAT - SOLAR' }, { value: 'PRIAT - DRIP', text: 'PRIAT - DRIP' }],
@@ -1198,6 +1195,13 @@
                 showErrorMessage('Database connection not available. Please refresh the page.');
                 return;
             }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                showErrorMessage('You must be logged in to submit expenses.');
+                return;
+            }
+            const userId = user.id;
 
             const form = e.target;
             form.classList.add('loading');
